@@ -1,0 +1,2 @@
+# Keep the archived deployment and its SHA-256 manifest identical on every OS.
+* -text

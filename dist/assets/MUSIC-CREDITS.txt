@@ -1,0 +1,15 @@
+Game background music
+"Bossa Antigua" Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
+
+Track: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1700069
+Original: https://incompetech.com/music/royalty-free/mp3-royaltyfree/Bossa%20Antigua.mp3
+ISRC: USUAN1700069
+Downloaded from the composer's official site on 2026-11-06.
+No modifications to the MP3. Looped playback, adjustable player volume.
+Local filename: cafe-jazz.mp3
+SHA256: 322103dd6ac5fae4872122f91d32cccd4d964b86d300585a5a0cdfaf7048af5d
+
+Title music: user-supplied "미성규 inst.mp3". Copied unchanged as title-inst.mp3.
+This credit does not grant third-party rights to the user-supplied title music.

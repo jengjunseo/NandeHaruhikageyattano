@@ -1,0 +1,13 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const files=['final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
+const src=files.map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n');let els={},writes=0,workerMarkup='';
+const taki={title:''},player={title:''};
+const el=x=>els[x]||(els[x]={innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return []}});
+const host=el('#workers');Object.defineProperty(host,'innerHTML',{get(){return workerMarkup},set(value){workerMarkup=value;writes++}});host.querySelector=x=>x==='.worker.taki'?taki:player;
+const c={console,Math,JSON,localStorage:{getItem:()=>null,setItem(){}},document:{querySelector:el,querySelectorAll:()=>[]},window:{},setInterval(){},setTimeout(){return 1},clearTimeout(){}};
+vm.createContext(c);vm.runInContext(src+';globalThis.api={s:()=>state,renderWorkers}',c);const a=c.api;
+assert(workerMarkup.includes('assets/taki-chibi.png'));let count=writes;a.renderWorkers();assert.equal(writes,count,'idle redraw must preserve sprite');
+a.s().workers.taki={kind:'make',remaining:4,id:1};a.renderWorkers();assert(taki.className.includes('busy make'));count=writes;a.s().workers.taki.remaining=3;a.renderWorkers();assert.equal(writes,count,'timer updates must not restart movement');assert(taki.title.includes('3초'));
+a.s().workers.taki.kind='serve';a.renderWorkers();assert(taki.className.includes('busy serve'));assert.equal(writes,count,'make/serve transitions keep the same image and its floor position');
+const css=fs.readFileSync('dist/style.css','utf8');assert(css.includes('animation:taki-make'));assert(css.includes('animation:taki-serve'));assert(css.includes('prefers-reduced-motion:reduce'));assert(fs.existsSync('dist/assets/taki-chibi.png'));
+console.log('PASS: sprite loaded, idle/make/serve states, stable animation node and reduced-motion fallback');

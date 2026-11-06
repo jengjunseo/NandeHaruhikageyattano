@@ -1,0 +1,18 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),crypto=require('crypto');
+const source=fs.readFileSync('dist/title-menu.js','utf8');
+const music=source.slice(source.indexOf('function playMusic(){'),source.indexOf('function message('));
+const track=()=>({paused:true,volume:1,play(){this.paused=false;return Promise.resolve()},pause(){this.paused=true}});
+const c={audio:track(),gameAudio:track(),visible:true,inSession:false,panel:null,settings:{music:true,musicVolume:.35},document:{hidden:false}};vm.createContext(c);vm.runInContext(music,c);
+c.playMusic();assert(!c.audio.paused);assert(c.gameAudio.paused);assert.equal(c.audio.volume,.35);
+c.visible=false;c.inSession=true;c.playMusic();assert(c.audio.paused);assert(!c.gameAudio.paused);assert.equal(c.gameAudio.volume,.35);
+c.panel='settings';c.settings.musicVolume=.16;c.playMusic();assert(!c.gameAudio.paused);assert.equal(c.gameAudio.volume,.16);
+c.settings.music=false;c.playMusic();assert(c.audio.paused&&c.gameAudio.paused);
+c.settings.music=true;c.document.hidden=true;c.playMusic();assert(c.audio.paused&&c.gameAudio.paused);
+c.document.hidden=false;c.playMusic();assert(!c.gameAudio.paused);
+c.visible=true;c.panel=null;c.playMusic();assert(!c.audio.paused);assert(c.gameAudio.paused);
+c.panel='exit';c.playMusic();assert(c.audio.paused&&c.gameAudio.paused);
+c.panel=null;c.settings.musicVolume=0;c.playMusic();assert(c.audio.paused&&c.gameAudio.paused);
+const html=fs.readFileSync('dist/index.html','utf8');assert(!html.includes('<iframe'));assert(html.includes('Kevin MacLeod'));assert(html.includes('https://creativecommons.org/licenses/by/4.0/'));
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync('dist/assets/cafe-jazz.mp3')).digest('hex'),'322103dd6ac5fae4872122f91d32cccd4d964b86d300585a5a0cdfaf7048af5d');
+assert(source.includes("document.addEventListener('visibilitychange',()=>{if(document.hidden){audio.pause();gameAudio.pause()}"));
+console.log('PASS music: title/game routing, no overlap, live volume/mute, background/exit silence, licensed unmodified MP3 and visible attribution.');

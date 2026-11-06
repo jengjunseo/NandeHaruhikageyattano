@@ -1,0 +1,13 @@
+{
+  "name": "project-ring-v47-backup",
+  "version": "0.0.47",
+  "private": true,
+  "description": "PROJECT RiNG version 47 source and asset checkpoint",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node scripts/serve.cjs 8765",
+    "test": "node scripts/check.cjs"
+  }
+}
