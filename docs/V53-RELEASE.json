@@ -1,0 +1,52 @@
+{
+  "version": 53,
+  "publishedOn": "2026-11-18",
+  "site": "https://project-ring-mygo-cafe.tsiba5021.chatgpt.site/",
+  "buildId": "v53-98c5dbdaa7501dce",
+  "siteVersion": 53,
+  "sourceCommit": "47ea42e6c10051b584bdc2c6a04ce6bd451afd68",
+  "savedVersion": "appgprj_6aeab65d2e8c8191bfb285e16e11b1d6~appgver_6b7c6594c4708191a4fdeccfab406445",
+  "deployment": "appgdep_6afd5f7763d08191a5f6f8f6f11b9655",
+  "publicationStatus": "succeeded",
+  "githubCodeCommit": "ddbdebe8f71b4f7554e0fb9d1f5a9459c49ac497",
+  "restorationTag": "v53",
+  "verification": {
+    "ci": {
+      "id": 44265298063,
+      "commit": "ddbdebe8f71b4f7554e0fb9d1f5a9459c49ac497",
+      "url": "https://github.com/jengjunseo/NandeHaruhikageyattano/actions/runs/44265298063",
+      "conclusion": "success",
+      "checks": 94,
+      "browserTests": 18
+    },
+    "retainedSnapshotFiles": 101,
+    "reproducibleBuild": true,
+    "responsiveViewports": [
+      [
+        360,
+        800
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        430,
+        932
+      ],
+      [
+        844,
+        390
+      ],
+      [
+        768,
+        1024
+      ],
+      [
+        1366,
+        768
+      ]
+    ],
+    "limits": "Viewport tests are not physical-device certification. Rights clearance, listening review, screen reader and 30-minute memory/INP measurements remain separate."
+  }
+}
