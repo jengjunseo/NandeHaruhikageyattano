@@ -1,8 +1,8 @@
 'use strict';
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const prefix=fs.readFileSync('tests/major-patch-check.cjs','utf8').split('const old=launch(null,true);')[0];
-const ctx={require,console};vm.runInNewContext(prefix+';this.h={launch,finish};',ctx);const {launch,finish}=ctx.h;
-const clocks={window:{},setTimeout(){}};vm.runInNewContext(fs.readFileSync('dist/simulation-clock.js','utf8'),clocks);
+const ctx={require,console};vm.runInNewContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+prefix+';this.h={launch,finish};',ctx);const {launch,finish}=ctx.h;
+const clocks={window:{},setTimeout(){}};vm.runInNewContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+fs.readFileSync('app/simulation-clock.js','utf8'),clocks);
 const Clock=clocks.window.RingClock;
 function shift({day=3,seed=187,menu='latte',profile='general',lamp=false,ownedOnly=false,id=12}={}) {
  const g=launch(),s=g.a.state();Object.assign(s,{day,stories:['intro'],nextId:id});g.r.init(s,false,seed);
@@ -60,8 +60,8 @@ let time=0,rate=1,pause=false,ticks=0,session={};const clock=Clock.create({speed
 time=900;clock.pulse();pause=true;time=1900;clock.pulse();pause=false;time=2000;clock.pulse();assert.equal(ticks,0);time=3000;clock.pulse();assert.equal(ticks,1);
 time=60000;clock.pulse();assert.equal(ticks,1,'background suspension never catches up');rate=2;time+=100;clock.pulse();time+=500;clock.pulse();assert.equal(ticks,2);session={};time+=500;clock.pulse();assert.equal(ticks,2,'loaded session starts with no elapsed debt');
 // Real v50 source fixture: optional fields default; money, records, pending VN and furniture survive.
-const oldPrefix=prefix.replace("const disk=name=>fs.readFileSync('dist/'+name+'.js','utf8');", "const disk=name=>fs.readFileSync('tests/fixtures/sites/0dc97bffb37d0ef604f0a53fb0b1333a4f84896e/'+name+'.js','utf8');");
-const oldCtx={require,console};vm.runInNewContext(oldPrefix+';this.h={launch,finish};',oldCtx);const old=oldCtx.h.launch();old.a.newGame();oldCtx.h.finish(old.a);const oldState=old.a.state();oldState.money=7000;oldState.day=5;old.r.place(oldState,'window','windowLamp');oldState.week.queue=['tomori_note'];old.a.show('morning_cups',false,1);
+const oldPrefix=prefix.replace("const disk=name=>fs.readFileSync('app/'+name+'.js','utf8');", "const disk=name=>fs.readFileSync('tests/fixtures/sites/0dc97bffb37d0ef604f0a53fb0b1333a4f84896e/'+name+'.js','utf8');");
+const oldCtx={require,console};vm.runInNewContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+oldPrefix+';this.h={launch,finish};',oldCtx);const old=oldCtx.h.launch();old.a.newGame();oldCtx.h.finish(old.a);const oldState=old.a.state();oldState.money=7000;oldState.day=5;old.r.place(oldState,'window','windowLamp');oldState.week.queue=['tomori_note'];old.a.show('morning_cups',false,1);
 const fixture=JSON.parse(JSON.stringify(oldState));const migrated=launch(JSON.stringify(fixture));assert(migrated.a.valid(fixture));assert.equal(migrated.a.state().money,fixture.money);assert.equal(migrated.a.state().simSpeed,1);assert.equal(migrated.a.state().week.placements.window,'windowLamp');assert.equal(JSON.stringify(migrated.a.state().week.queue),JSON.stringify(fixture.week.queue));migrated.a.resume();assert.equal(migrated.a.index(),0);assert.equal(migrated.a.active().id,'morning_cups');
  const speedSave=JSON.parse(JSON.stringify(migrated.a.state()));speedSave.simSpeed=2;const fastLoaded=launch(JSON.stringify(speedSave));assert(fastLoaded.a.valid(speedSave));assert.equal(fastLoaded.a.state().simSpeed,2);speedSave.simSpeed=9;assert(!fastLoaded.a.valid(speedSave));
  for(const installed of [false,true]) {

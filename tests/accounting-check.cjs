@@ -1,10 +1,10 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const files=['final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
-const source=files.map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n');
+const source=files.map(n=>fs.readFileSync('app/'+n+'.js','utf8')).join('\n');
 function start(saved){
   const elements={};const el=s=>elements[s]||(elements[s]={innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return []},focus(){}});
   const c={console,Math,JSON,localStorage:{getItem:()=>saved||null,setItem(){}},document:{querySelector:el,querySelectorAll:()=>[]},window:{},setInterval(){},setTimeout(){return 1},clearTimeout(){}};
-  vm.createContext(c);vm.runInContext(source+';globalThis.api={get:()=>state,buy,upgrade,support:requestSupport,assign,tick,close:closeDay,summary,initial}',c);return {a:c.api,elements};
+  vm.createContext(c);vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+source+';globalThis.api={get:()=>state,buy,upgrade,support:requestSupport,assign,tick,close:closeDay,summary,initial}',c);return {a:c.api,elements};
 }
 let {a,elements}=start();let s=a.get();
 a.buy('beans');a.upgrade('machine');a.support();assert.equal(s.accounting.purchases,130);assert.equal(s.accounting.equipment,4000);assert.equal(s.accounting.support,2500);

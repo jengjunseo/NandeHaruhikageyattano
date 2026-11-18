@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const context=vm.createContext({window:{},console,Date});
 for (const name of ['week-balance','week-rules','week-story','week-save']) {
- vm.runInContext(fs.readFileSync('dist/'+name+'.js','utf8'),context);
+ vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+fs.readFileSync('app/'+name+'.js','utf8'),context);
 }
 const rules=context.window.RingWeek;
 const fresh=(seed=47)=>({

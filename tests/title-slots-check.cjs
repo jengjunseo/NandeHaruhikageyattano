@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 let raw=new Map(),rejectWrites=false;const storage={getItem:k=>raw.get(k)??null,setItem(k,v){if(rejectWrites)throw Error('quota');raw.set(k,v)}};
 class Audio{constructor(){this.paused=true}pause(){this.paused=true}play(){this.paused=false;return Promise.resolve()}}
-const context={window:{},Audio,localStorage:storage,Date,Intl,JSON,Number,Math};vm.createContext(context);vm.runInContext(fs.readFileSync('dist/title-menu.js','utf8'),context);const Slots=context.window.RingSaveSlots;
+const context={window:{},Audio,localStorage:storage,Date,Intl,JSON,Number,Math};vm.createContext(context);vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+fs.readFileSync('app/title-menu.js','utf8'),context);const Slots=context.window.RingSaveSlots;
 const validate=s=>!!s&&Number.isInteger(s.day)&&s.day>=1&&Number.isFinite(s.money)&&typeof s.pendingStory==='object';
 const store=new Slots(storage,validate);assert.equal(store.read().length,5);assert(store.read().every(x=>x===null));
 for(let i=0;i<5;i++){const state={day:i+1,money:4500+i,pendingStory:{id:'intro',index:i,choice:null}};store.put(i,state);state.pendingStory.index=99;assert.equal(store.get(i).state.pendingStory.index,i,'slot stores a detached snapshot')}
@@ -12,6 +12,6 @@ raw.set(store.key,'broken');assert.throws(()=>store.read());assert.throws(()=>st
 raw.set(store.key,JSON.stringify({version:1,slots:[{savedAt:'not a date',state:{day:1,money:2,pendingStory:null}},null,null,null,null]}));assert.throws(()=>store.get(0));
 // Title art was intentionally refined in the visual patch; original media is backed up.
 const crypto=require('crypto'),digest=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-assert.equal(digest('dist/assets/title-screen.png'),'d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075');
-assert.equal(digest('dist/assets/title-inst.mp3'),'601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0');
+assert.equal(digest('app/assets/title-screen.png'),'d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075');
+assert.equal(digest('app/assets/title-inst.mp3'),'601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0');
 console.log('PASS five independent manual slots: snapshots, reload, bounds, failed overwrite, corrupt preservation and original title media integrity');

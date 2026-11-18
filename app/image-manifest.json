@@ -1,0 +1,440 @@
+{
+  "version": 53,
+  "tool": "sharp 0.34.5",
+  "images": {
+    "assets/anon-wink.png": {
+      "url": "assets/optimized/anon-wink.webp",
+      "sourceBytes": 1048906,
+      "bytes": 117288,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "34e6e4e7548368b16b309b6d97c8f18c78d25cfbb521980312159e632d8222c2"
+    },
+    "assets/anon-worried.png": {
+      "url": "assets/optimized/anon-worried.webp",
+      "sourceBytes": 1043838,
+      "bytes": 110318,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "6bc4fd766e2f7abfbe24e93f578c2fb5840bdd788350acfe79b0afc2d3a77aad"
+    },
+    "assets/anon.png": {
+      "url": "assets/optimized/anon.webp",
+      "sourceBytes": 1067942,
+      "bytes": 112162,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "fae767cc4d3c1fcadefc7ec0be3f8945c22e30fc0ca8bc2715bd6d1b217f9fea"
+    },
+    "assets/cafe-display-upgraded.png": {
+      "url": "assets/optimized/cafe-display-upgraded.webp",
+      "sourceBytes": 2249353,
+      "bytes": 194052,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "82b96520b30f110d04c992586234da3bac3977deecdee4c942b168b2181817d6",
+      "small": "assets/optimized/cafe-display-upgraded-small.webp",
+      "smallBytes": 117742
+    },
+    "assets/cafe-display-v52.png": {
+      "url": "assets/optimized/cafe-display-v52.webp",
+      "sourceBytes": 1966083,
+      "bytes": 140520,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "c78e207ce9023801f982c8cdceb979f86e1ac30eda42febb2f2c17c27d10632c",
+      "small": "assets/optimized/cafe-display-v52-small.webp",
+      "smallBytes": 84490
+    },
+    "assets/cafe-v52.png": {
+      "url": "assets/optimized/cafe-v52.webp",
+      "sourceBytes": 1936912,
+      "bytes": 137278,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "20ecef5e70c6722a6270d9bf40deefcc47630a9517f5d01065eb22f89175f636",
+      "small": "assets/optimized/cafe-v52-small.webp",
+      "smallBytes": 82780
+    },
+    "assets/cafe.png": {
+      "url": "assets/optimized/cafe.webp",
+      "sourceBytes": 2420506,
+      "bytes": 205858,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "c5a164a67d61a98dbdd8d4040d0df1c1de1e48a28e75c2a41df4c9a2558b53ba",
+      "small": "assets/optimized/cafe-small.webp",
+      "smallBytes": 119640
+    },
+    "assets/casual/anon.png": {
+      "url": "assets/optimized/casual/anon.webp",
+      "sourceBytes": 2073053,
+      "bytes": 317472,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "7bce8ead7c73256f0096be49e13c93b4280320ac2b3e7f5f9e635800b7b2c60f"
+    },
+    "assets/casual/emotes.png": {
+      "url": "assets/optimized/casual/emotes.webp",
+      "sourceBytes": 595756,
+      "bytes": 104804,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "fc354f5d39e66c0938826da07f0e2e7402308f74e937f7ab9cbe0d0bd792d056"
+    },
+    "assets/casual/rana.png": {
+      "url": "assets/optimized/casual/rana.webp",
+      "sourceBytes": 1422645,
+      "bytes": 173512,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "76e720feab9fd77f9351552a847aad5f445d31f97ec6c6c8ddbc0f8d6622c779"
+    },
+    "assets/casual/soyo.png": {
+      "url": "assets/optimized/casual/soyo.webp",
+      "sourceBytes": 2051482,
+      "bytes": 324144,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "6727df2c9b5125c3ec7c72ed2407232d9e0dad23aa68a1f943623bff3cbdcbfe"
+    },
+    "assets/casual/taki.png": {
+      "url": "assets/optimized/casual/taki.webp",
+      "sourceBytes": 1622986,
+      "bytes": 209508,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "d3aade1600130171dc3e128631b1aa139fd6afa95c8f27e3d2079f1af9a6bea0"
+    },
+    "assets/casual/tomori.png": {
+      "url": "assets/optimized/casual/tomori.webp",
+      "sourceBytes": 1447415,
+      "bytes": 179994,
+      "width": 1280,
+      "height": 640,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "b5c09a702840541c6ed6cc5d4e5dce08b817894185c03e4dca950aa99cf5f3bf"
+    },
+    "assets/furniture-v51.png": {
+      "url": "assets/optimized/furniture-v51.webp",
+      "sourceBytes": 1571180,
+      "bytes": 145572,
+      "width": 768,
+      "height": 768,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "sha256": "f09f19d34dc73f130803bf964c722f6c1e69afb4665b5eb10ec08d061f9f412c"
+    },
+    "assets/furniture-v52.png": {
+      "url": "assets/optimized/furniture-v52.webp",
+      "sourceBytes": 927116,
+      "bytes": 91486,
+      "width": 768,
+      "height": 759,
+      "sourceWidth": 1261,
+      "sourceHeight": 1247,
+      "sha256": "b91deefc6e2b341e8ca1a2804d2fc512c49ad44a7a7f494dcf5d63dbc0d75488"
+    },
+    "assets/haru-vn.png": {
+      "url": "assets/optimized/haru-vn.webp",
+      "sourceBytes": 989164,
+      "bytes": 75688,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "f69c86a0038ef97cc76dc7d1a52d7f5929b756f5706f869aa7ff95b5f428015e"
+    },
+    "assets/jun-vn.png": {
+      "url": "assets/optimized/jun-vn.webp",
+      "sourceBytes": 904312,
+      "bytes": 71296,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "37b82dc7084ff2ea390bed01cd4f0f23b31414501d9c3f5b88474bf911e0dd8b"
+    },
+    "assets/mei-vn.png": {
+      "url": "assets/optimized/mei-vn.webp",
+      "sourceBytes": 911114,
+      "bytes": 71794,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "d275023eb9b013b2f22b73436c99615075115d4fbff388c9d44f17e21a3684e9"
+    },
+    "assets/menu-atlas.png": {
+      "url": "assets/optimized/menu-atlas.webp",
+      "sourceBytes": 2249834,
+      "bytes": 70240,
+      "width": 600,
+      "height": 400,
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "sha256": "ac5ee53db12a8a06f9916cd993dee80d98ef26e6774e107eab82ead761b2d665"
+    },
+    "assets/mutsumi.png": {
+      "url": "assets/optimized/mutsumi.webp",
+      "sourceBytes": 1454719,
+      "bytes": 60956,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "58c9911933effd660b2e2ea7bf989108fc312af321eb7e35e5373193b05b4475"
+    },
+    "assets/nyamu.png": {
+      "url": "assets/optimized/nyamu.webp",
+      "sourceBytes": 398695,
+      "bytes": 31874,
+      "width": 600,
+      "height": 720,
+      "sourceWidth": 1145,
+      "sourceHeight": 1374,
+      "sha256": "236223921ee8fd947d257aa894e43f82480891ca2dbeaad7e168590fcc211520"
+    },
+    "assets/pico-guests-v52.png": {
+      "url": "assets/optimized/pico-guests-v52.webp",
+      "sourceBytes": 1215293,
+      "bytes": 112532,
+      "width": 768,
+      "height": 768,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "sha256": "3725b3239e2f13373c40248a7f6c3144cdb13b7d41b1b997aabdc2e60903ac89"
+    },
+    "assets/pico-taki-v52.png": {
+      "url": "assets/optimized/pico-taki-v52.webp",
+      "sourceBytes": 1565426,
+      "bytes": 87516,
+      "width": 768,
+      "height": 384,
+      "sourceWidth": 1774,
+      "sourceHeight": 887,
+      "sha256": "e8efacaad81f629132d07a6898dedc924ca1fea24498f8046e9f140dce80f4bd"
+    },
+    "assets/rana-curious.png": {
+      "url": "assets/optimized/rana-curious.webp",
+      "sourceBytes": 812150,
+      "bytes": 76932,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "2de29c4cf29e17948048a918df308c685d9facbf8cb2ed73ead2e8fe296cdec7"
+    },
+    "assets/rana.png": {
+      "url": "assets/optimized/rana.webp",
+      "sourceBytes": 832733,
+      "bytes": 79778,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "c03d88c8ffd4477e6d2e9a64dda149e89f6eee351c83e76e0d5cac9c0a141f9a"
+    },
+    "assets/sakiko.png": {
+      "url": "assets/optimized/sakiko.webp",
+      "sourceBytes": 687823,
+      "bytes": 51302,
+      "width": 600,
+      "height": 720,
+      "sourceWidth": 1145,
+      "sourceHeight": 1374,
+      "sha256": "d8932f0ad49a4eeaaac77601e9209d43ff7b6722ba01b4b08907314e8b52dd82"
+    },
+    "assets/soyo-worried.png": {
+      "url": "assets/optimized/soyo-worried.webp",
+      "sourceBytes": 1130347,
+      "bytes": 114078,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "9ea7424dcaa4ea75627b47663559e846b1eece2d96c6b13a4a32c3f6d57abc98"
+    },
+    "assets/soyo.png": {
+      "url": "assets/optimized/soyo.webp",
+      "sourceBytes": 1169933,
+      "bytes": 112732,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "6153897dd2f92c8dbf90ac62c36ae23ccd0dfe4219fd227e8376f532677553ec"
+    },
+    "assets/taki-chibi.png": {
+      "url": "assets/optimized/taki-chibi.webp",
+      "sourceBytes": 1513392,
+      "bytes": 69872,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "305795da26992e69b2d905b19c1722ee68aa05ac4286943c1df3348186968a04"
+    },
+    "assets/taki-reference.png": {
+      "url": "assets/optimized/taki-reference.webp",
+      "sourceBytes": 50828,
+      "bytes": 6654,
+      "width": 165,
+      "height": 210,
+      "sourceWidth": 165,
+      "sourceHeight": 210,
+      "sha256": "b67b7a09d8fdf44e99084bf0df6c69e8195a3f5b4d3e78148b7a12930ccb2174"
+    },
+    "assets/taki-worried.png": {
+      "url": "assets/optimized/taki-worried.webp",
+      "sourceBytes": 909548,
+      "bytes": 78094,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "b93f04fb89bb6add7f5687f0d2e96995364909a9215e47d332007a537e20bbcb"
+    },
+    "assets/taki.png": {
+      "url": "assets/optimized/taki.webp",
+      "sourceBytes": 935275,
+      "bytes": 79020,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "de0fc5163784a1328455d844a7746227f6692c91f7b2b923a2fff215558669f1"
+    },
+    "assets/title-screen.png": {
+      "url": "assets/optimized/title-screen.webp",
+      "sourceBytes": 2183611,
+      "bytes": 160548,
+      "width": 1280,
+      "height": 716,
+      "sourceWidth": 1677,
+      "sourceHeight": 938,
+      "sha256": "644d9f577b5734b3de53fb4872feb21737b8ffb20edc3800038457751ea1132a",
+      "small": "assets/optimized/title-screen-small.webp",
+      "smallBytes": 96276
+    },
+    "assets/tomori-smile.png": {
+      "url": "assets/optimized/tomori-smile.webp",
+      "sourceBytes": 1366547,
+      "bytes": 55078,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "da68422e2db24ad6c448c9c3c19b29ac30988beabf10f1ce9bce9e9a3736065d"
+    },
+    "assets/tomori.png": {
+      "url": "assets/optimized/tomori.webp",
+      "sourceBytes": 1378610,
+      "bytes": 54698,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "fb34e4d64acce53fecad4c3d3a63b28687d9c4275c59020c2bf4ed99c4f26990"
+    },
+    "assets/uika.png": {
+      "url": "assets/optimized/uika.webp",
+      "sourceBytes": 1349506,
+      "bytes": 49478,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "56a1151b9f8abb42d747b84e16e176f02bbdabcb4c15e0f7994a7970e03741a9"
+    },
+    "assets/umiri.png": {
+      "url": "assets/optimized/umiri.webp",
+      "sourceBytes": 769869,
+      "bytes": 79470,
+      "width": 600,
+      "height": 1200,
+      "sourceWidth": 887,
+      "sourceHeight": 1774,
+      "sha256": "4aad81e014cf757bb8359fffdc7df104e773ea8ece8eb21d6ba278d477a490b3"
+    },
+    "assets/visitor-mei.png": {
+      "url": "assets/optimized/visitor-mei.webp",
+      "sourceBytes": 1680053,
+      "bytes": 70686,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "e7de4116859bc4739f000d45162c28fb1d858cde624da71791da5092062d9e9a"
+    },
+    "assets/visitor-rust.png": {
+      "url": "assets/optimized/visitor-rust.webp",
+      "sourceBytes": 1583402,
+      "bytes": 62834,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "0145ed9572783127c10de6c1f721d0b3d967c92d6391eb3dbf44adcbf7388a24"
+    },
+    "assets/visitor-teal.png": {
+      "url": "assets/optimized/visitor-teal.webp",
+      "sourceBytes": 1656943,
+      "bytes": 65198,
+      "width": 600,
+      "height": 900,
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "sha256": "2271dcdaf39cd641a6059ec8d848b4c709dcb74b94199f7986bbba917f228efc"
+    },
+    "assets/vn-rehearsal.png": {
+      "url": "assets/optimized/vn-rehearsal.webp",
+      "sourceBytes": 2238425,
+      "bytes": 163276,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "282d1aa7b1a61b219f57d3acbb89671342fae73974ce7f89dfae33080d938826",
+      "small": "assets/optimized/vn-rehearsal-small.webp",
+      "smallBytes": 92128
+    },
+    "assets/vn-stage.png": {
+      "url": "assets/optimized/vn-stage.webp",
+      "sourceBytes": 2112940,
+      "bytes": 159808,
+      "width": 1280,
+      "height": 720,
+      "sourceWidth": 1672,
+      "sourceHeight": 941,
+      "sha256": "00cf4b517f95aa125ed7699fa654595d9e15d143de1675dc2ddd1b975df2cd6c",
+      "small": "assets/optimized/vn-stage-small.webp",
+      "smallBytes": 94680
+    }
+  }
+}

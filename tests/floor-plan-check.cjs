@@ -1,4 +1,4 @@
-const fs=require('fs'),vm=require('vm'),assert=require('assert');const c={window:{}};vm.createContext(c);vm.runInContext(fs.readFileSync('dist/floor-plan.js','utf8'),c);const f=c.window.RingFloor;
+const fs=require('fs'),vm=require('vm'),assert=require('assert');const c={window:{}};vm.createContext(c);vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+fs.readFileSync('app/floor-plan.js','utf8'),c);const f=c.window.RingFloor;
 function node(){const props={},classes=new Set(),tray={};return {dataset:{},props,classes,tray,style:{setProperty(k,v){props[k]=v}},classList:{toggle(k,v){v?classes.add(k):classes.delete(k)}},querySelector:()=>tray}}
 for(let i=0;i<7;i++){
  const guest=node(),p=f.seat(i);f.customer(guest,i);assert(p.x<35||p.x>65,'central aisle remains open');assert.equal(guest.dataset.facing,p.x<50?'right':'left');assert.equal(guest.props['--guest-facing'],p.x<50?'-1':'1');
@@ -6,5 +6,5 @@ for(let i=0;i<7;i++){
  work.remaining=1;f.worker(worker,work,customers);assert(worker.classes.has('handoff'));f.worker(worker,null,customers);assert.equal(worker.props['--worker-x'],f.home.x+'%');assert(worker.tray.hidden);assert(!worker.classes.has('handoff'));assert.equal(worker.dataset.serviceTarget,'');
 }
 const clone=f.seat(0);clone.x=100;assert.equal(f.seat(0).x,16);assert.equal(f.seat(-1).x,16);const stale=node();f.worker(stale,{id:999,kind:'serve',remaining:1},[]);assert.equal(stale.props['--worker-x'],f.home.x+'%');
-const css=fs.readFileSync('dist/floor-plan.css','utf8');assert(css.includes('.scene .person-portrait{transform:scaleX('));assert(css.includes('prefers-reduced-motion:reduce'));assert(css.includes('animation-play-state:paused'));
+const css=fs.readFileSync('app/floor-plan.css','utf8');assert(css.includes('.scene .person-portrait{transform:scaleX('));assert(css.includes('prefers-reduced-motion:reduce'));assert(css.includes('animation-play-state:paused'));
 console.log('PASS cafe floor: all 7 seats face inward, clear aisle, exact per-guest service destination, handoff/return, stale target fallback and reduced motion.');

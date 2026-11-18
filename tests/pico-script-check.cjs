@@ -3,8 +3,8 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const imported=JSON.parse(fs.readFileSync('tests/pico-rewrite/imported.json','utf8'));
 const prefix=fs.readFileSync('tests/major-patch-check.cjs','utf8').split('const old=launch(null,true);')[0]
  .replace('initial,regularForId,','initial,regularForId,storyData:()=>storyData,cast:vnCast,');
-function harness(p){const c={require,console};vm.runInNewContext(p+';this.launchGame=launch;',c);return c.launchGame;}
-const launch=harness(prefix),prior=harness(prefix.replace("const disk=name=>fs.readFileSync('dist/'+name+'.js','utf8');","const disk=name=>fs.readFileSync('tests/pico-rewrite/before/'+name+'.js','utf8');"));
+function harness(p){const c={require,console};vm.runInNewContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+p+';this.launchGame=launch;',c);return c.launchGame;}
+const launch=harness(prefix),prior=harness(prefix.replace("const disk=name=>fs.readFileSync('app/'+name+'.js','utf8');","const disk=name=>fs.readFileSync('tests/pico-rewrite/before/'+name+'.js','utf8');"));
 const game=launch(),old=prior(),defs=game.a.storyData(),oldDefs=old.a.storyData();
 game.r.init(game.a.state(),false,234);
 assert.equal(Object.keys(defs).length,110);assert.deepEqual(Object.keys(defs).sort(),Object.keys(imported.scenes).sort());

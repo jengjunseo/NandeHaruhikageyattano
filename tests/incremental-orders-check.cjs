@@ -1,9 +1,9 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const files=['final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
-const src=files.map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n');const els={};
+const src=files.map(n=>fs.readFileSync('app/'+n+'.js','utf8')).join('\n');const els={};
 const el=x=>els[x]||(els[x]={innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return []}});
 const doc={querySelector:el,querySelectorAll:()=>[]};const c={console,Math,JSON,localStorage:{getItem:()=>null,setItem(){}},document:doc,window:{},setInterval(){},setTimeout(){return 1},clearTimeout(){}};
-vm.createContext(c);vm.runInContext(src+';globalThis.api={s:()=>state,update:updateOrderBoard}',c);const a=c.api,s=a.s();
+vm.createContext(c);vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+src+';globalThis.api={s:()=>state,update:updateOrderBoard}',c);const a=c.api,s=a.s();
 const grid={children:[],querySelectorAll(){return this.children},appendChild(card){this.children.push(card);card.parent=this}};
 class Card{
  constructor(){this.dataset={};this.className='';this._html='';this.button=null}

@@ -1,13 +1,23 @@
 {
-  "name": "project-ring-backup",
-  "version": "0.0.52",
+  "name": "project-ring",
+  "version": "0.0.53",
   "private": true,
-  "description": "PROJECT RiNG v52 deployed source, assets, story scripts and portable regression checks",
+  "description": "PROJECT RiNG v53 stability and performance patch",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
-    "start": "node scripts/serve.cjs 8765",
-    "test": "node scripts/check.cjs"
+    "start": "node scripts/serve.cjs 8765 dist",
+    "test": "node scripts/check.cjs",
+    "build": "node scripts/build.cjs",
+    "verify-build": "node scripts/verify-build.cjs",
+    "verify-snapshot": "node scripts/verify-snapshot.cjs",
+    "test:browser": "playwright test",
+    "test:browser:list": "playwright test --list",
+    "assets": "node scripts/images.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "sharp": "0.34.5"
   }
 }

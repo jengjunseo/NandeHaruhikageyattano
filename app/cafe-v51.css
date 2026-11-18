@@ -1,0 +1,54 @@
+/* v51: all controls sit below faces; rain belongs to the glazed window only. */
+.week-mode #weekScene { z-index:auto; }
+#weekScene>.week-decor-layer { z-index:1; }
+#weekScene .floor-pin,#weekScene .week-sign,#weekScene .week-prep-tools,#weekScene .week-slot-pins,#weekScene .week-scene-status { z-index:5; }
+.simulation-speed { display:flex; gap:5px; align-items:center; margin-left:auto; font-size:11px; color:#f6e6c9; }
+.simulation-speed select { min-height:44px; padding:5px 8px; background:#fff1d5; color:#263f4a; border:1px solid #c3a26b; border-radius:3px; font:inherit; }
+.simulation-speed[hidden] { display:none; }
+.simulation-speed+#pauseBtn { margin-left:0; }
+.week-mode .station-display,.week-mode .station-espresso,.week-mode .station-mix { --pin-y:14%; min-height:44px; font-size:12px; padding:3px 7px; border-radius:3px; }
+.week-mode .floor-pin.working::before { content:none; }
+.week-mode .station-display.working,.week-mode .station-espresso.working,.week-mode .station-mix.working { border:2px solid #f5cf7e; background:#254650; color:#fff4df; }
+.week-mode .week-pickup { --pin-x:72%; --pin-y:14%; max-width:25%; flex-wrap:wrap; border-radius:3px; }
+.week-mode .week-milk { --pin-x:49%; --pin-y:2%; }
+.week-mode .week-sign { top:4%; left:3%; font-size:17px; padding:4px 8px; }
+.week-mode .week-scene-status { bottom:auto; top:3%; left:22%; right:3%; justify-content:flex-end; font-size:11px; }
+.week-scene-status .week-quiet { flex-basis:100%; max-width:470px; margin:2px 0 0 auto; padding:6px 9px; border-left:2px solid #b89659; background:#203b46ed; color:#ffedcd; line-height:1.55; }
+.scene.rainy:before { inset:0; clip-path:none; mask-image:url('assets/window-mask-v51.svg'); mask-size:cover; mask-position:center; mask-repeat:no-repeat; opacity:.6; background:repeating-linear-gradient(110deg,transparent 0 22px,#d7e9ee99 23px 24px,transparent 26px 44px); animation:window-rain 1.2s linear infinite; }
+@keyframes window-rain { to { background-position:-10px 36px; } }
+.week-decor-layer[data-live-phase]::after { content:''; position:absolute; inset:12% 4% 48% 68%; pointer-events:none; }
+.week-decor-layer[data-live-phase=before]::after { background:radial-gradient(ellipse at 50% 10%,#ffcf844d,transparent 70%); }
+.week-decor-layer[data-live-phase=during]::after { background:conic-gradient(from 155deg at 25% 0%,transparent,#f7cb8877 15deg,transparent 33deg),conic-gradient(from 175deg at 75% 0%,transparent,#e2c1e866 18deg,transparent 36deg); }
+.week-decor-layer[data-live-phase=after]::after { background:radial-gradient(ellipse at 50% 10%,#9cb7ce38,transparent 70%); }
+.week-decor-layer .cafe-prop.painted-prop { width:100%; height:auto; aspect-ratio:1; background-image:var(--ring-assets-furniture-v51-png); background-size:200% 200%; border:0; border-radius:0; box-shadow:none; rotate:0deg; transform:none; filter:drop-shadow(0 3px 2px #30201850); }
+.painted-prop::before,.painted-prop::after,.painted-prop>i { display:none!important; }
+.week-decor-layer .prop-windowLamp { background-position:0 0; }
+.week-decor-layer .prop-machine { background-position:100% 0; }
+.week-decor-layer .prop-poster { background-position:0 100%; }
+.week-decor-layer .prop-pickupShelf { background-position:100% 100%; }
+.week-decor-layer .prop-spot.slot-window:has(.prop-windowLamp) { width:12%; height:auto; left:13%; bottom:43%; }
+.week-decor-layer .prop-spot.slot-espresso { width:13%; height:auto; bottom:50%; }
+.week-decor-layer .prop-spot.slot-pickup { width:13%; height:auto; bottom:43%; }
+.week-decor-layer .prop-spot.slot-entrance:has(.prop-poster) { width:12%; height:auto; bottom:45%; }
+.week-decor-layer .prop-spot.slot-stage:has(.prop-poster) { width:13%; height:auto; bottom:42%; left:90%; }
+.facility-compare { flex-basis:100%; border-left:3px solid #89713d; padding:9px; margin:4px 0; background:#eee2c9; font-size:13px; line-height:1.6; }
+.receipt-moments { border-top:1px dashed #b4a17d; border-bottom:1px dashed #b4a17d; padding:8px 0; margin:12px 0; }
+.receipt-moments h3 { font-size:14px; margin:0 0 8px; color:#3d4d46; }
+.receipt-moments p { font-size:14px; margin:5px 0; }
+@media(min-width:701px) and (max-width:900px) { .scene.rainy:before { mask-size:auto 100%; } }
+@media(max-width:700px) {
+ body.week-mode.service-mode .stage-top { display:grid; grid-template-columns:minmax(0,1fr) auto auto; height:auto; min-height:66px; padding:3px 7px; gap:0 5px; }
+ .stage-top #dayMood { grid-column:1/4; grid-row:2; font-size:10px; margin:0; max-width:none; padding-bottom:3px; }
+ .stage-top .simulation-speed { grid-column:2; grid-row:1; }
+ .stage-top #pauseBtn { grid-column:3; grid-row:1; min-height:44px; padding:3px 7px; }
+ .simulation-speed { margin-left:auto; gap:0; }
+ .simulation-speed select { max-width:94px; font-size:11px; }
+ #simRate { display:none; }
+ .week-mode .station-display,.week-mode .station-espresso,.week-mode .station-mix { padding:2px; min-width:44px; }
+ .week-mode .week-pickup { max-width:22%; --pin-x:78%; padding:2px; }
+ .week-pickup button { font-size:10px; }
+ .week-mode .week-scene-status { top:2%; left:26%; right:2%; font-size:10px; }
+ .week-scene-status .week-quiet { font-size:11px; max-width:250px; padding:4px 6px; }
+}
+@media(prefers-reduced-motion:reduce) { .scene.rainy:before { display:none; } }
+body.reduce-motion .scene.rainy:before { display:none; }

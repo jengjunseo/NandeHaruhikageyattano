@@ -1,14 +1,14 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const names=['week-balance','week-rules','week-story','final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
-const code=names.map(name=>fs.readFileSync('dist/'+name+'.js','utf8')).join('\n');
+const code=names.map(name=>fs.readFileSync('app/'+name+'.js','utf8')).join('\n');
 function launch(saved=null){
  const elements={};
  const el=id=>elements[id]||= {innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return[]},focus(){}};
  const window={RingWeekView:{mount(){},render(){},ticket(){return ''},archive(){return ''},receipt(){return ''},bindArchive(){},bindStock(){},stock(){return ''},decorLink(){return ''},scenery(){return ''},priceHelp(){return ''},menuStats(){return ''}}};
  const storage={getItem:()=>saved,setItem:(_key,v)=>saved=v};
  const c=vm.createContext({console,window,localStorage:storage,document:{querySelector:el,querySelectorAll:()=>[]},setInterval(){},setTimeout(){return 1},clearTimeout(){}});
- vm.runInContext(code+';globalThis.flow={state:()=>state,story:()=>activeStory,index:()=>storyIndex,definition:activeStoryDefinition,newGame:titleNewGame,resume:titleResume,open:openDay,assign,tick,nextDay,closeDay,advance:advanceStory,choose:chooseStory,show:showStory,postpone:postponeWeekStory,adapter:weekViewAdapter,valid:validBackupState,snapshot:()=>JSON.parse(JSON.stringify(state)),initial}',c);
+ vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+code+';globalThis.flow={state:()=>state,story:()=>activeStory,index:()=>storyIndex,definition:activeStoryDefinition,newGame:titleNewGame,resume:titleResume,open:openDay,assign,tick,nextDay,closeDay,advance:advanceStory,choose:chooseStory,show:showStory,postpone:postponeWeekStory,adapter:weekViewAdapter,valid:validBackupState,snapshot:()=>JSON.parse(JSON.stringify(state)),initial}',c);
  return {a:c.flow,rules:window.RingWeek};
 }
 function finish(a){
@@ -21,7 +21,7 @@ function finish(a){
  }
 }
 const sample=launch(), original=sample.a.initial();
-Object.assign(original,{day:4,phase:'open',tick:12,arrival:999,stories:['intro'],customers:[
+Object.assign(original,{day:4,phase:'open',nextId:9,tick:12,arrival:999,stories:['intro'],customers:[
  {id:8,menu:'latte',price:670,seat:1,status:'making',materialCost:230,patience:19,maxPatience:26}
 ],workers:{taki:{id:8,kind:'make',remaining:3}}});
 const restored=launch(JSON.stringify(original)).a;
@@ -44,7 +44,7 @@ function run(weak){
  let postponed=false;
  for(let day=1;day<=42;day++){
   const s=a.state();
-  if(weak&&day>1)s.prices.coffee=650;
+  if(weak&&day>1)s.prices.coffee=630;
   if(s.money<500){s.money+=2500;s.supportDebt+=2500}
   if(day>=3)s.enabled.liveSet=true;
   const basket=rules.recommendation(s).missing;

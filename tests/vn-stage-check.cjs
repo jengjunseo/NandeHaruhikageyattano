@@ -4,7 +4,7 @@ function element(selector){return elements[selector]||(elements[selector]={inner
 const c={console,Math,JSON,localStorage:{getItem:()=>null,setItem(){}},document:{querySelector:element,querySelectorAll:()=>[],addEventListener:(type,fn)=>listeners[type]=fn},window:{},setInterval(){},setTimeout(fn){timers.set(++nextTimer,fn);return nextTimer},clearTimeout(id){timers.delete(id)}};
 vm.createContext(c);
 const files=['final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
-vm.runInContext(files.map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n')+';globalThis.api={show:showStory,input:vnInput,choose:chooseStory,index:()=>storyIndex,current:()=>activeStory,state:()=>state,defs:()=>storyData,complete:()=>vnTextComplete,tick,log:showVnLog}',c);
+vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+files.map(n=>fs.readFileSync('app/'+n+'.js','utf8')).join('\n')+';globalThis.api={show:showStory,input:vnInput,choose:chooseStory,index:()=>storyIndex,current:()=>activeStory,state:()=>state,defs:()=>storyData,complete:()=>vnTextComplete,tick,log:showVnLog}',c);
 const a=c.api;
 a.show('tomori_note');
 assert(elements['#dialog'].innerHTML.includes('assets/tomori.png'));

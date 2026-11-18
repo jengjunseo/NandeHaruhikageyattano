@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
 const names=['week-balance','week-rules','week-story','final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','morning-stories','game'];
-const disk=name=>fs.readFileSync('dist/'+name+'.js','utf8');
+const disk=name=>fs.readFileSync('app/'+name+'.js','utf8');
 function launch(saved=null,legacy=false){
  const elements={},timers=new Map();let timer=0;
  const el=id=>elements[id]||={innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return[]},focus(){}};
@@ -11,7 +11,7 @@ function launch(saved=null,legacy=false){
  const storage={getItem:()=>saved,setItem:(_key,v)=>saved=v};
  const ctx=vm.createContext({console,window,localStorage:storage,document:{querySelector:el,querySelectorAll:()=>[]},setInterval(){},
    setTimeout(fn,ms){timers.set(++timer,{fn,ms});return timer},clearTimeout(id){timers.delete(id)}});
- vm.runInContext(source+';globalThis.qa={state:()=>state,active:()=>activeStory,index:()=>storyIndex,definition:activeStoryDefinition,newGame:titleNewGame,resume:titleResume,open:openDay,assign,tick,next:nextDay,close:closeDay,advance:advanceStory,choose:chooseStory,show:showStory,adapter:weekViewAdapter,valid:validBackupState,initial,regularForId,showVnLog,vnInput}',ctx);
+ vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+source+';globalThis.qa={state:()=>state,active:()=>activeStory,index:()=>storyIndex,definition:activeStoryDefinition,newGame:titleNewGame,resume:titleResume,open:openDay,assign,tick,next:nextDay,close:closeDay,advance:advanceStory,choose:chooseStory,show:showStory,adapter:weekViewAdapter,valid:validBackupState,initial,regularForId,showVnLog,vnInput}',ctx);
  return {a:ctx.qa,r:window.RingWeek,m:window.RingMorning,elements,timers,saved:()=>saved,el};
 }
 function finish(a){

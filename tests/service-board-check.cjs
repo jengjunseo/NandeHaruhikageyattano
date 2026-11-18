@@ -1,9 +1,9 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const files=['final-stories','concert-arc','followup-stories','endings','live-stories','regular-stories','seasonal-stories','cameos','cafe-episodes','main-arc','episodes','choices','stories','comedy-stories','game'];
-const src=files.map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n');let els={},classes=new Set();
+const src=files.map(n=>fs.readFileSync('app/'+n+'.js','utf8')).join('\n');let els={},classes=new Set();
 const el=x=>els[x]||(els[x]={innerHTML:'',textContent:'',value:'make',style:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll(){return []}});
 const c={console,Math,JSON,localStorage:{getItem:()=>null,setItem(){}},document:{querySelector:el,querySelectorAll:()=>[],body:{classList:{toggle(name,on){on?classes.add(name):classes.delete(name)}}}},window:{},setInterval(){},setTimeout(){return 1},clearTimeout(){}};
-vm.createContext(c);vm.runInContext(src+';globalThis.api={s:()=>state,render,setTab}',c);const a=c.api,s=a.s();
+vm.createContext(c);vm.runInContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+src+';globalThis.api={s:()=>state,render,setTab}',c);const a=c.api,s=a.s();
 assert(!classes.has('service-mode'));assert.equal(els['#clock'].textContent,'영업 준비');
 Object.assign(s,{phase:'open',tick:75,customers:Array.from({length:7},(_,i)=>({id:i+1,menu:i%2?'latte':'coffee',status:'waiting',patience:20,maxPatience:26}))});a.setTab('orders');
 assert(classes.has('service-mode'));assert.equal(els['#clock'].textContent,'남은 주문 마무리 중');

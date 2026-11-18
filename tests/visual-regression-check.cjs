@@ -3,9 +3,9 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),cp=require('child_process'),crypto=require('crypto');
 const base=fs.readFileSync('tests/major-patch-check.cjs','utf8').split('const old=launch(null,true);')[0]
  .replace('initial,regularForId,','initial,regularForId,stories:()=>storyData,direction:vnDirection,');
-function harness(source){const ctx={require,console};vm.runInNewContext(source+';this.tools={launch,finish};',ctx);return ctx.tools}
+function harness(source){const ctx={require,console};vm.runInNewContext(require('fs').readFileSync('app/save-schema.js','utf8')+require('fs').readFileSync('app/service-lines.js','utf8')+'\n'+source+';this.tools={launch,finish};',ctx);return ctx.tools}
 const {launch,finish}=harness(base);
-const oldBase=base.replace("const disk=name=>fs.readFileSync('dist/'+name+'.js','utf8');",
+const oldBase=base.replace("const disk=name=>fs.readFileSync('app/'+name+'.js','utf8');",
  "const disk=name=>fs.readFileSync('tests/fixtures/sites/ee429fd3ccd6550f674784a3adbe9dd307ac8dbd/'+name+'.js','utf8');");
 const old=harness(oldBase);
 const before=old.launch(),g=launch(),a=g.a;g.r.init(a.state(),false,8371);
@@ -42,12 +42,10 @@ for(let i=0;i<intro.lines.length;i++){let fx=a.direction(intro,i,intro.lines[i])
 assert.deepEqual(effects,[],'no additional comedy overlays in the rewritten prologue');
 assert.equal(a.direction({lines:[['아논','왜!?','shock']]},0,['아논','왜!?','shock']).fx,null,'punctuation alone is not a cue');
 assert.equal(a.direction({lines:[['소요','응.','worried']]},0,['소요','응.','worried']).fx,null);
-const css=fs.readFileSync('dist/ring-visual.css','utf8');
+const css=fs.readFileSync('app/ring-visual.css','utf8');
 assert(css.includes('.vn-reaction-anchor { position:absolute'));
 assert(css.includes('body[data-tab=story] .staff-control { display:none; }'));
 const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-// The portable repository pins the actual v52 published title asset; the original
-// development-only reference image is not needed to execute this backup.
-assert.equal(digest('dist/assets/title-screen.png'),'d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075');
+assert.equal(digest('app/assets/title-screen.png'),'d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075');
 console.log('PASS visual patch: '+Object.keys(current).length+' stories / '+lines+' lines audited for separate player, '+firstPerson+' lines retain ordinary first-person text, 9 v49 morning saves restart obsolete dialogue safely, choices/IDs/queue unchanged, restrained entrance cues.');
 

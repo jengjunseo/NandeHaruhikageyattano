@@ -10,3 +10,7 @@ Thumbs.db
 tests/*-metrics.json
 tests/*contrast.json
 tests/pico-rewrite/verified-story-book.md
+
+.cache/
+playwright-report/
+test-results/
