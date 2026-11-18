@@ -1,0 +1,455 @@
+{
+  "version": 52,
+  "backedUpOn": "2026-11-18",
+  "site": "https://project-ring-mygo-cafe.tsiba5021.chatgpt.site/",
+  "siteProject": "appgprj_6aeab65d2e8c8191bfb285e16e11b1d6",
+  "sourceCommit": "42367573362bc8f9d4c3dccd1aba8865c6f5a78b",
+  "deployment": "appgdep_6afc8365fbe48191b86bb3fb833bf8ab",
+  "files": [
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 106,
+      "sha256": "401198a0d5593a8f6461f9a31a03f5c799256a05862d1cd768af6490acaaf918"
+    },
+    {
+      "path": "dist/asset-cache.js",
+      "bytes": 3545,
+      "sha256": "c9392562c7125211708ff4a361447b8d6d63fb480a1af5a82202b54e29f49e6b"
+    },
+    {
+      "path": "dist/assets/anon-wink.png",
+      "bytes": 1048906,
+      "sha256": "b3973e83d710b4f3fca469fbd921a9eed9428a2d5332b779db0cf5ddfadedf15"
+    },
+    {
+      "path": "dist/assets/anon-worried.png",
+      "bytes": 1043838,
+      "sha256": "508a5d6ace0ed3904ce62ea3d3cd405755556bba4acf6e8c47c7a1753fc50778"
+    },
+    {
+      "path": "dist/assets/anon.png",
+      "bytes": 1067942,
+      "sha256": "e8fcf848442c69308b933fdb42571577789b59ac5322b9dca68b3274a4362423"
+    },
+    {
+      "path": "dist/assets/cafe-display-upgraded.png",
+      "bytes": 2249353,
+      "sha256": "842cf3884c739b7f4bcafd7e2e259828e753a10792a1a03a59a268556b362eda"
+    },
+    {
+      "path": "dist/assets/cafe-display-v52.png",
+      "bytes": 1966083,
+      "sha256": "71554e0f344fb746208b873767ef5e750280e010e1c71962ff1dfaeecf35bf1b"
+    },
+    {
+      "path": "dist/assets/cafe-jazz.mp3",
+      "bytes": 9069455,
+      "sha256": "322103dd6ac5fae4872122f91d32cccd4d964b86d300585a5a0cdfaf7048af5d"
+    },
+    {
+      "path": "dist/assets/cafe-v52.png",
+      "bytes": 1936912,
+      "sha256": "0bfd183c03d8f273dff41aea004ce981b76baf9bf17664c8071326f23d22cbb7"
+    },
+    {
+      "path": "dist/assets/cafe.png",
+      "bytes": 2420506,
+      "sha256": "ca1b73176af22c0d8a8d5ab5bd2b6d77dab4704e4d538f58373b0560da91cf2d"
+    },
+    {
+      "path": "dist/assets/casual/anon.png",
+      "bytes": 2073053,
+      "sha256": "f8d269d212d9d9c9ab0c6986c23f5326b589cfd738ec56557acc7855831fb747"
+    },
+    {
+      "path": "dist/assets/casual/emotes.png",
+      "bytes": 595756,
+      "sha256": "b9e4aa7f9d32c15f24bc28e728a1b9fde8ef8a89abd0c5c9f9ab2cd3b5723a71"
+    },
+    {
+      "path": "dist/assets/casual/rana.png",
+      "bytes": 1422645,
+      "sha256": "641b0fb4948e42893b98668c2e37f18c5177bdbf2209279407946146297dcdb3"
+    },
+    {
+      "path": "dist/assets/casual/soyo.png",
+      "bytes": 2051482,
+      "sha256": "60b32048360068c07f15acdd52b8fdbd1c65481e046401e14500b1e7bf93cec5"
+    },
+    {
+      "path": "dist/assets/casual/taki.png",
+      "bytes": 1622986,
+      "sha256": "7a24b5b015b9bd743b147143f4585741991b32f7e52cce434157bdaf7c0a97ee"
+    },
+    {
+      "path": "dist/assets/casual/tomori.png",
+      "bytes": 1447415,
+      "sha256": "bef31a648e7e845599ad30f43b518b73fb1f68585dc79d20b07910c5d7cfc75c"
+    },
+    {
+      "path": "dist/assets/furniture-v51.png",
+      "bytes": 1571180,
+      "sha256": "9649864dc07ba96908f74c3fe4a3c99b70f6dea98b22b96268cdb52a27cc30ce"
+    },
+    {
+      "path": "dist/assets/furniture-v52.png",
+      "bytes": 927116,
+      "sha256": "745489e44f82878e89bed4697f050f2e34dc32ded121f56720e898c6bf98750d"
+    },
+    {
+      "path": "dist/assets/haru-vn.png",
+      "bytes": 989164,
+      "sha256": "ed5756312ee2ac8c82e51ff08225289dd766728088a0b9a020f5cdbb631d8c23"
+    },
+    {
+      "path": "dist/assets/jun-vn.png",
+      "bytes": 904312,
+      "sha256": "c4910ad9687a7e7b137fed88e2bfba96affa43b9643e639e97e71450e4bc72a4"
+    },
+    {
+      "path": "dist/assets/mei-vn.png",
+      "bytes": 911114,
+      "sha256": "e9585ba2e2b0dc96f9efbd6e67a49691a48cfa886fc0d9012b9dcb3375e6f05b"
+    },
+    {
+      "path": "dist/assets/menu-atlas.png",
+      "bytes": 2249834,
+      "sha256": "f3b8b417868ee60e647ce5c5406b3e0c116b3ea597bb24b139e9a5154c95b1e9"
+    },
+    {
+      "path": "dist/assets/MUSIC-CREDITS.txt",
+      "bytes": 764,
+      "sha256": "48c7da451b6a2ce1fed1b81f481fca9c5b3e06a39f59fd8c2c3b9a58022f6ccd"
+    },
+    {
+      "path": "dist/assets/mutsumi.png",
+      "bytes": 1454719,
+      "sha256": "59d0fd9a72f83f09d15a7761c47d26ad2c3860d21256e26c8e0f4d849da865bd"
+    },
+    {
+      "path": "dist/assets/nyamu.png",
+      "bytes": 398695,
+      "sha256": "5fdca5963328d055580617085eab30f318a55667fb4aa4920445681dcd713019"
+    },
+    {
+      "path": "dist/assets/pico-guests-v52.png",
+      "bytes": 1215293,
+      "sha256": "ef410a30111ffb1b3c8ec4b7c0b85cf39b0a3dd2257054cdc9062761c3621658"
+    },
+    {
+      "path": "dist/assets/pico-taki-v52.png",
+      "bytes": 1565426,
+      "sha256": "ae3d526ed8909f13fdc5aa05d8b790769949d2bdb7d01b7e71b9b5e44ba5f8df"
+    },
+    {
+      "path": "dist/assets/rana-curious.png",
+      "bytes": 812150,
+      "sha256": "a1ca03bd0cf6cd5e0262a48d2f03e76bec0a5280114370177243dbe8a377728c"
+    },
+    {
+      "path": "dist/assets/rana.png",
+      "bytes": 832733,
+      "sha256": "01739045c3869951cd7bfce54cd0a39240bc062ca4b4d556cdfcd82ae1551d2f"
+    },
+    {
+      "path": "dist/assets/sakiko.png",
+      "bytes": 687823,
+      "sha256": "28b95a0d07c085d907783b5fc2b1b91f5f90b0773a8ad41f8b02362d32d7f6ad"
+    },
+    {
+      "path": "dist/assets/soyo-worried.png",
+      "bytes": 1130347,
+      "sha256": "a37c0c15236eb07e5a7fd9a01c4ef2b903835da34a8bfd7c63b58ed43b44e79d"
+    },
+    {
+      "path": "dist/assets/soyo.png",
+      "bytes": 1169933,
+      "sha256": "19ea6b6f1accf37b7032c67b3a97edf43603347b962347decf5d3df75c70df8b"
+    },
+    {
+      "path": "dist/assets/taki-chibi.png",
+      "bytes": 1513392,
+      "sha256": "3d09fb7c5f1c81c91fe4a2c271702b1c87d7f8c229a03e5e630576ec3c317e24"
+    },
+    {
+      "path": "dist/assets/taki-reference.png",
+      "bytes": 50828,
+      "sha256": "9b7c2646d433f16399dea3ca9a5588a169be052f636802a1a78411aea4b1abd6"
+    },
+    {
+      "path": "dist/assets/taki-worried.png",
+      "bytes": 909548,
+      "sha256": "0198d610585ae6056e745439accc8dca27dc5bee5aca3188f8a3e1c431df322f"
+    },
+    {
+      "path": "dist/assets/taki.png",
+      "bytes": 935275,
+      "sha256": "8c87a846d7a0dfd4d4b398c98adb5692471dc9937d4fb539281172d729cac55d"
+    },
+    {
+      "path": "dist/assets/title-inst.mp3",
+      "bytes": 8429011,
+      "sha256": "601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0"
+    },
+    {
+      "path": "dist/assets/title-screen.png",
+      "bytes": 2183611,
+      "sha256": "d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075"
+    },
+    {
+      "path": "dist/assets/tomori-smile.png",
+      "bytes": 1366547,
+      "sha256": "b96cfbfe2998853696a91591d1e4dea1be853b4da605ed44f23c2e5c9f84baa4"
+    },
+    {
+      "path": "dist/assets/tomori.png",
+      "bytes": 1378610,
+      "sha256": "99bf480560ced09dbdfd550f4a0c772fa98a2584ac9af36e52bc8be3b8bc55ab"
+    },
+    {
+      "path": "dist/assets/uika.png",
+      "bytes": 1349506,
+      "sha256": "d36ff6acec0b6a5e6a03de35775e7dcedb0f25e413170f14476a7d0a9dad6fd9"
+    },
+    {
+      "path": "dist/assets/umiri.png",
+      "bytes": 769869,
+      "sha256": "692f851610e005f885701b795fcd90246128d46b834525cede88be82c649b572"
+    },
+    {
+      "path": "dist/assets/visitor-mei.png",
+      "bytes": 1680053,
+      "sha256": "c047c07c9250d22f476f72db997a809dd69658aec668c9e8a1253ca21074831b"
+    },
+    {
+      "path": "dist/assets/visitor-rust.png",
+      "bytes": 1583402,
+      "sha256": "8ef98686d416030004d9fe23fef916d8e1b99740d6d11cd114216a3bce3989b4"
+    },
+    {
+      "path": "dist/assets/visitor-teal.png",
+      "bytes": 1656943,
+      "sha256": "3a06dac4ab7a833d804a24b2d30bf4e9da8f56979d94462ffdf8fa0fc12c82f9"
+    },
+    {
+      "path": "dist/assets/vn-rehearsal.png",
+      "bytes": 2238425,
+      "sha256": "f2d74bdfe24dc92b836fc208e503da546b8366a5aab2fe02397c25c700d45266"
+    },
+    {
+      "path": "dist/assets/vn-stage.png",
+      "bytes": 2112940,
+      "sha256": "ff626c1b037c736295a6349231e8a8fad509771c0d7c1a9abab1c20ea5f14edd"
+    },
+    {
+      "path": "dist/assets/window-mask-v51.svg",
+      "bytes": 148,
+      "sha256": "9f57f033804638784014f131e7fb29dcaa65ad9a39a7964e4bf4ce905312b4ec"
+    },
+    {
+      "path": "dist/assets/window-mask-v52.svg",
+      "bytes": 150,
+      "sha256": "b2c9e427b63765a15e89be026ae7aafd7aa33df0db50b8c17ac06249f1705660"
+    },
+    {
+      "path": "dist/audio-engine.js",
+      "bytes": 5423,
+      "sha256": "34fce7d8fd4af5790d43df52564a91663684128baa6b5a0965d5a61d0426d863"
+    },
+    {
+      "path": "dist/cafe-episodes.js",
+      "bytes": 7885,
+      "sha256": "c3f727f72edb5eca448758b035f054c608beaa92ede725a2abcb888a6be52a6b"
+    },
+    {
+      "path": "dist/cafe-presentation.js",
+      "bytes": 1463,
+      "sha256": "dad7a9a274c99dcf270b1c97e6e2f4e0ad39a44efb7edea30c3f605a79310480"
+    },
+    {
+      "path": "dist/cafe-sprites.js",
+      "bytes": 1773,
+      "sha256": "861d99d3993f55a1bccd925d5619a575ff7a58917296578845db52e55aae8158"
+    },
+    {
+      "path": "dist/cafe-v51.css",
+      "bytes": 5316,
+      "sha256": "0103ecacc99784bef1b2f34548ce78a2d495e31c928870dd1d5fd72ff6c83549"
+    },
+    {
+      "path": "dist/cafe-v52.css",
+      "bytes": 19571,
+      "sha256": "33537a3dc12d4e07e2938633ad7d1f1c1528887df75d16379ee41c589e186e1a"
+    },
+    {
+      "path": "dist/cameos.js",
+      "bytes": 11148,
+      "sha256": "81a45ae6e1078ec17547d243767a974876ccf86265262e6a6273c42924685685"
+    },
+    {
+      "path": "dist/choices.js",
+      "bytes": 5699,
+      "sha256": "4a331f03066d13f9418ee2e6aff8677e87779da79741f0b33b321ec472ec351b"
+    },
+    {
+      "path": "dist/comedy-stories.js",
+      "bytes": 142330,
+      "sha256": "1e7470b4dcc9213e771d9d30fc528506de165c589482616ec6d871a73a6782ed"
+    },
+    {
+      "path": "dist/concert-arc.js",
+      "bytes": 15148,
+      "sha256": "461d72c1d01730f33432c835618d6ad3267f5a4d77e04c8a61cfddd6e91b3775"
+    },
+    {
+      "path": "dist/endings.js",
+      "bytes": 5945,
+      "sha256": "03420daedeff4ad6a08b25c2c4df94122b243dda5cec70e9dc2ac84e96c49c4e"
+    },
+    {
+      "path": "dist/episodes.js",
+      "bytes": 12650,
+      "sha256": "0dbfefd71d99a46ea8b9c52bd1fbb268e683a5f3954c98ac7662b25e2edf2c6b"
+    },
+    {
+      "path": "dist/experience.js",
+      "bytes": 8154,
+      "sha256": "d18da77879229420141be7512183cf77b58403aef9b33301a997231ff9893118"
+    },
+    {
+      "path": "dist/final-stories.js",
+      "bytes": 10978,
+      "sha256": "74a95d8985a6fb4f028d9ed9c47721c2f0a33bf959541dd0320c2c909aa8bd8b"
+    },
+    {
+      "path": "dist/first-week.css",
+      "bytes": 12686,
+      "sha256": "78fb3530e6d919e72c7df7956bedd2d207b8ef0254e1f48e4d5c4158b0304db5"
+    },
+    {
+      "path": "dist/floor-plan.css",
+      "bytes": 2904,
+      "sha256": "3cfc7a00d52bd82fe03eed0643fb598447adb4c353c3e0d593156116952a2a01"
+    },
+    {
+      "path": "dist/floor-plan.js",
+      "bytes": 2444,
+      "sha256": "4ed12f75aa6d6a5f451965fbd0edac7976a0c921d4a87e1f320ac3a30a4d1b83"
+    },
+    {
+      "path": "dist/followup-stories.js",
+      "bytes": 10092,
+      "sha256": "15f35055d6a66fe250b4142919e8451c6f40ab1b22234bf419e7e0df5b58b86f"
+    },
+    {
+      "path": "dist/game-theme.css",
+      "bytes": 31199,
+      "sha256": "f718c706397a6fbdfe9721129189143947a3ff148f73b609948e3fb55e470afc"
+    },
+    {
+      "path": "dist/game.js",
+      "bytes": 104958,
+      "sha256": "1b47dfb828f19d87530176dc3172acc2baf3bc188ad35a36b8b26e0ec058a1b6"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 7556,
+      "sha256": "628401a8375d4832e8fe8c7c40431608028747143622a6bcd2f4a8250e885c2d"
+    },
+    {
+      "path": "dist/live-stories.js",
+      "bytes": 10965,
+      "sha256": "ea6094c74a5c8d96ccf12cb83dea78cfc68607ff6664fcb9585ad73bc2813bff"
+    },
+    {
+      "path": "dist/main-arc.js",
+      "bytes": 15691,
+      "sha256": "b20b74c88180808676f235670af4c8b4a412b7c2f80298eebf37103526faf63c"
+    },
+    {
+      "path": "dist/major-patch.css",
+      "bytes": 3981,
+      "sha256": "f04de8f39b22063c95eac98e5bde8130472bb29b04af9a07bacffc857dcbc920"
+    },
+    {
+      "path": "dist/morning-stories.js",
+      "bytes": 4903,
+      "sha256": "0fecf003c7ba0715acba491ab8094cabaeabf7d7a6a66a86f7e5620b54cd37f1"
+    },
+    {
+      "path": "dist/music.js",
+      "bytes": 126,
+      "sha256": "d0ac22df2b0688c3399ee4fa3980fc807cfcfca5c0e35095179bcfe288b4a361"
+    },
+    {
+      "path": "dist/regular-stories.js",
+      "bytes": 6068,
+      "sha256": "2b1eed13a3cfec48dc856c7b296eefe822f466c48920719bbfc6a73521f36b5d"
+    },
+    {
+      "path": "dist/ring-visual.css",
+      "bytes": 21422,
+      "sha256": "731fcbef6efd84891b887f78a624553a5da9ef07fed54f1644ad4c021b1a4fde"
+    },
+    {
+      "path": "dist/seasonal-stories.js",
+      "bytes": 5164,
+      "sha256": "78befac7667e251abb49a49c1b3d05e11f35e3baefb9e53e3056a1f5f69a8783"
+    },
+    {
+      "path": "dist/simulation-clock.js",
+      "bytes": 1400,
+      "sha256": "fa032d871752a2843d37539004b33af5e4bf56e39c57a5421f18fcdf0dd9039f"
+    },
+    {
+      "path": "dist/stories.js",
+      "bytes": 19179,
+      "sha256": "3a9052b6c1c133c45458b07ebc084201851457c3634b5a64d423ab3d4b920e33"
+    },
+    {
+      "path": "dist/style.css",
+      "bytes": 23553,
+      "sha256": "d8647d4545f89cc2563215c69dba0f19cdf9bb303a3b737300c6cbc07ba8be7d"
+    },
+    {
+      "path": "dist/title-menu.css",
+      "bytes": 9072,
+      "sha256": "1fa96f53a46e0cb131b7b479c034874cc611d473984ef18c2bfdf293a80c9857"
+    },
+    {
+      "path": "dist/title-menu.js",
+      "bytes": 14084,
+      "sha256": "0c327db0837593d70353cbe373bd758341d4edfe9f2469da84c3d6633d360466"
+    },
+    {
+      "path": "dist/vn-comedy.css",
+      "bytes": 15177,
+      "sha256": "5c9746a9dbd6bbd047a90176960968c0ba6c9f2266e91b519f65821d4bb33452"
+    },
+    {
+      "path": "dist/week-balance.js",
+      "bytes": 3960,
+      "sha256": "3b07e3784309862399fbb8b209d8200a7872765cbc9de22810b070a73c8bf232"
+    },
+    {
+      "path": "dist/week-rules.js",
+      "bytes": 35789,
+      "sha256": "593bf3cde6cc14dd73d087cff53064cb09e1063a18d19d9c2615529654ca2d51"
+    },
+    {
+      "path": "dist/week-save.js",
+      "bytes": 1184,
+      "sha256": "3af36a84982332fbe09469b9c158275165ccfdcc552a81b766501bef6c7d2f95"
+    },
+    {
+      "path": "dist/week-story.js",
+      "bytes": 4256,
+      "sha256": "0e94e26fccb4c40d1e64592b7ecd8079d917242eb12efe60eb2b34c0c17d22f2"
+    },
+    {
+      "path": "dist/week-view.js",
+      "bytes": 24901,
+      "sha256": "cd1736c205b0b7ee7b256257f5ff2255fbe012d5b9eb23f30c6edf32ebaacc14"
+    }
+  ]
+}

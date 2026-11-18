@@ -1,8 +1,8 @@
 {
-  "name": "project-ring-v47-backup",
-  "version": "0.0.47",
+  "name": "project-ring-backup",
+  "version": "0.0.52",
   "private": true,
-  "description": "PROJECT RiNG version 47 source and asset checkpoint",
+  "description": "PROJECT RiNG v52 deployed source, assets, story scripts and portable regression checks",
   "engines": {
     "node": ">=20"
   },

@@ -10,8 +10,8 @@ const before=raw.get(store.key);assert.throws(()=>store.put(5,{day:1,money:0,pen
 rejectWrites=true;assert.throws(()=>store.put(0,{day:9,money:100,pendingStory:null}));assert.equal(raw.get(store.key),before,'a failed overwrite leaves the old slot intact');rejectWrites=false;
 raw.set(store.key,'broken');assert.throws(()=>store.read());assert.throws(()=>store.put(0,{day:1,money:0,pendingStory:null}));assert.equal(raw.get(store.key),'broken','corrupt slot envelope is preserved');
 raw.set(store.key,JSON.stringify({version:1,slots:[{savedAt:'not a date',state:{day:1,money:2,pendingStory:null}},null,null,null,null]}));assert.throws(()=>store.get(0));
-// The exact caller-provided image and MP3 are copied without modifying their content.
+// Title art was intentionally refined in the visual patch; original media is backed up.
 const crypto=require('crypto'),digest=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-assert.equal(digest('dist/assets/title-screen.png'),'ea3f065b31afb3202f514598e605be897210f4f3b07023171b992d522c7ea63d');
+assert.equal(digest('dist/assets/title-screen.png'),'d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075');
 assert.equal(digest('dist/assets/title-inst.mp3'),'601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0');
 console.log('PASS five independent manual slots: snapshots, reload, bounds, failed overwrite, corrupt preservation and original title media integrity');

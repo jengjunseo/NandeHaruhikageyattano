@@ -1,0 +1,55 @@
+/* Keep the service controls close to the orders and the day's results on one receipt. */
+.week-mode .staff-control { flex-wrap:wrap; }
+#priorityHint { flex:0 0 100%; margin:0; color:#334f60; font-size:12px; line-height:1.45; }
+#priorityHint:empty { display:none; }
+.week-mode #priority { min-height:44px; }
+.week-mode #tutorial:not([hidden]) { display:flex; flex:none; align-items:center; gap:7px; padding:8px 10px; line-height:1.4; color:#43321d; background:#fff3d7; border-bottom:1px solid #ddbd80; }
+.week-mode #tutorialText { flex:1; }
+.week-mode #tutorialSkip { min-height:44px; font-size:11px; flex:none; max-width:98px; }
+.week-mode .guest-line { margin:4px 0; font-size:11px; color:#485568; line-height:1.45; }
+.week-mode .stage-footer { min-height:2.3rem; }
+.week-mode #serviceNotice:not([hidden]) { padding:5px 9px; font-size:12px; line-height:1.4; color:#643a26; }
+.week-mode #serviceNotice[data-reason=sold]:not([hidden]) { background:#e4f0df; border-color:#acc4a4; color:#244429; }
+.week-mode .week-stock fieldset { border:0; padding:0; margin:0; min-inline-size:0; }
+.week-stock .muted, .week-mode .prep-section .muted, .dialog .week-receipt p { color:#425966; }
+#weekBasketPreview { color:#173f50; font-size:13px; font-weight:700; margin:10px 0 4px; }
+#weekBasketFeedback { min-height:1.2em; margin:.5em 0; color:#214c55; }
+.week-mode [data-section=equipment] > .growth-path { display:block; }
+.growth-preview { width:100%; padding:4px 0; line-height:1.5; }
+.week-receipt dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.week-receipt dl div { min-width:0; }
+.week-receipt dd { overflow-wrap:anywhere; }
+.receipt-accounts { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.receipt-accounts h3 { font-size:14px; color:#214756; margin:6px 0; }
+.receipt-orders, .week-regulars { font-size:13px; line-height:1.65; color:#334f60; }
+.receipt-forecast, .receipt-taki { background:#edf4f1; padding:8px 10px; border-left:3px solid #86a699; }
+.week-regulars { margin:6px 0 14px; }
+.vn-overlay .vn-top>button, .vn-overlay .vn-menu button, .vn-overlay .vn-menu select, #logBack { min-height:44px; }
+.vn-overlay .vn-menu { max-height:calc(100dvh - 75px); overflow:auto; overscroll-behavior:contain; }
+.vn-morning { animation:none; max-width:68vw; width:max-content; font-size:clamp(11px,2vw,14px); }
+.vn-overlay .vn-dialogue { padding-bottom:max(26px,env(safe-area-inset-bottom)); }
+.week-mode button:focus-visible, .week-mode summary:focus-visible, .week-mode select:focus-visible, .vn-overlay button:focus-visible { outline:2px solid #116381; outline-offset:2px; }
+@media(max-width:700px) {
+  .receipt-accounts { grid-template-columns:1fr; gap:3px; }
+  .week-receipt dl { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  body.week-mode.service-mode .staff-control { gap:3px 8px; }
+  body.week-mode.service-mode .scene:has(.coach-mark) { height:clamp(165px,30dvh,250px); }
+  body.week-mode.service-mode #tutorial { padding-block:4px; }
+  .week-scene-status { left:10%; right:10%; bottom:2%; }
+}
+@media(max-height:510px) and (orientation:landscape) {
+  body.week-mode.service-mode { overflow:auto; }
+  body.week-mode.service-mode #app { height:auto; }
+  body.week-mode.service-mode main { overflow:visible; }
+  body.week-mode.service-mode aside { min-height:240px; }
+}
+
+body.week-mode[data-phase=prep][data-tab=prep] .staff-control { display:flex; }
+
+/* The VN removes its full-screen overlay while the dialogue history is open. */
+#modal:has(.vn-log) { background:#172634d9; padding:12px; }
+#dialog:has(.vn-log) { box-sizing:border-box; width:min(100%,620px); max-height:calc(100dvh - 24px); overflow:auto; padding:clamp(14px,4vw,26px); border:1px solid #cadce6; border-radius:10px; background:#f7fbfe; color:#294251; }
+#dialog:has(.vn-log) h2 { color:#18495f; }
+#dialog:has(.vn-log) .log-line strong { color:#64426a; }
+#dialog:has(.vn-log) .log-line p { color:#294251; }
+#dialog:has(.vn-log) .vn-log { max-height:48dvh; overflow:auto; }

@@ -1,8 +1,8 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto'),{spawn}=require('child_process');
-const root=path.resolve(__dirname,'..'),manifest=require('../backup-v47.json');
+const root=path.resolve(__dirname,'..'),manifest=require('../backup-v52.json');
 for(const file of manifest.files){const data=fs.readFileSync(path.join(root,file.path));if(data.length!==file.bytes||crypto.createHash('sha256').update(data).digest('hex')!==file.sha256)throw Error('Snapshot integrity mismatch: '+file.path)}
-console.log('PASS v47 snapshot integrity: '+manifest.files.length+' published files');
+console.log('PASS v52 snapshot integrity: '+manifest.files.length+' published files');
 const syntax=fs.readdirSync(path.join(root,'dist')).filter(x=>x.endsWith('.js')).map(x=>({name:'syntax '+x,args:['--check',path.join(root,'dist',x)]}));
 const checks=[...syntax,...require('../tests/checks.json').map(x=>({name:x,args:[path.join(root,'tests',x)]}))];
 let cursor=0,failed=0;

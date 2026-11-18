@@ -5,3 +5,8 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Test outputs; fixtures above are intentionally versioned.
+tests/*-metrics.json
+tests/*contrast.json
+tests/pico-rewrite/verified-story-book.md

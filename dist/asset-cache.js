@@ -5,14 +5,41 @@ window.RingAssets=(()=>{
   'assets/cafe.png','assets/cafe-display-upgraded.png','assets/vn-rehearsal.png','assets/vn-stage.png',
   'assets/sakiko.png','assets/mutsumi.png','assets/uika.png','assets/umiri.png','assets/nyamu.png',
   'assets/haru-vn.png','assets/mei-vn.png','assets/jun-vn.png','assets/taki-chibi.png','assets/menu-atlas.png',
-  'assets/visitor-teal.png','assets/visitor-rust.png','assets/visitor-mei.png'
+  'assets/visitor-teal.png','assets/visitor-rust.png','assets/visitor-mei.png','assets/furniture-v51.png','assets/pico-taki-v52.png','assets/pico-guests-v52.png','assets/cafe-v52.png','assets/furniture-v52.png','assets/cafe-display-v52.png'
  ];
- const decoded=new Map();let pending=null;
- async function load(path){
-  if(decoded.has(path))return decoded.get(path);
-  const img=new Image();img.decoding='sync';img.loading='eager';
-  const loaded=new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('이미지를 불러오지 못했습니다.'))});img.src=path;
-  await loaded;if(typeof img.decode==='function')await img.decode();decoded.set(path,img);return img;
+ const optional=new Set(['assets/pico-taki-v52.png','assets/pico-guests-v52.png','assets/cafe-v52.png','assets/furniture-v52.png','assets/cafe-display-v52.png']),failures=new Set();
+ const critical=['assets/casual/taki.png','assets/cafe.png'];
+ const decoded=new Map(),inFlight=new Map();let pending=null,background=null;
+ function load(path){
+  if(failures.has(path))return Promise.resolve(null);
+  if(decoded.has(path))return Promise.resolve(decoded.get(path));
+  if(inFlight.has(path))return inFlight.get(path);
+  const request=(async()=>{
+   const img=new Image();img.decoding='sync';img.loading='eager';
+   const loaded=new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('이미지를 불러오지 못했습니다.'))});
+   img.src=path;
+   await loaded;
+   if(typeof img.decode==='function')await img.decode();
+   decoded.set(path,img);
+   return img;
+  })().catch(error=>{if(!optional.has(path))throw error;failures.add(path);return null}).finally(()=>inFlight.delete(path));
+  inFlight.set(path,request);
+  return request;
+ }
+ async function first(onProgress=()=>{}){
+  let done=0;
+  onProgress(0,critical.length);
+  await Promise.all(critical.map(async path=>{await load(path);onProgress(++done,critical.length)}));
+  prefetch();
+ }
+ function prefetch(){
+  if(background)return background;
+  background=(async()=>{
+   for(const group of [paths.slice(0,6),paths.slice(18),paths.slice(6,18)]){
+    for(let i=0;i<group.length;i+=4)await Promise.allSettled(group.slice(i,i+4).map(load));
+   }
+  })().finally(()=>{background=null});
+  return background;
  }
  function ensure(onProgress=()=>{}){
   if(pending)return pending;
@@ -28,5 +55,5 @@ window.RingAssets=(()=>{
    image.className=placeholder.className;image.alt=placeholder.alt;image.setAttribute('data-legacy-src',placeholder.getAttribute('data-legacy-src')||'');image.draggable=false;placeholder.replaceWith(image);
   });
  }
- return {ensure,hydrate,get ready(){return paths.every(path=>decoded.has(path))},get count(){return decoded.size}};
+ return {ensure,first,prefetch,hydrate,get failures(){return [...failures]},get ready(){return paths.every(path=>decoded.has(path)||failures.has(path))},get count(){return decoded.size}};
 })();

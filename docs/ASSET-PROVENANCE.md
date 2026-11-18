@@ -49,3 +49,17 @@
 - `assets/title-inst.mp3`는 사용자 제공 `미성규 inst.mp3`의 원본 복사. SHA256 `601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0`.
 - 게임 재즈 `assets/cafe-jazz.mp3`: Kevin MacLeod, Bossa Antigua, ISRC USUAN1700069. 공식 incompetech.com의 트랙 정보·다운로드를 2026-11-06 확인했다. CC BY 4.0 무료 이용 조건에 따라 저작자·곡명·트랙 링크·라이선스를 게임 설정과 음악 메뉴 및 `assets/MUSIC-CREDITS.txt`에 표시한다. MP3는 편집하지 않았고 반복 재생·플레이어 음량만 적용한다. SHA256 `322103dd6ac5fae4872122f91d32cccd4d964b86d300585a5a0cdfaf7048af5d`.
 - 이번 타이틀·재즈·손님 방향 및 서빙 배치 변경에서는 새 이미지를 생성하거나 픽셀을 편집하지 않았다. 캐릭터 방향은 CSS 반전으로 처리하고 말풍선은 반전하지 않는다.
+
+
+## 2026-11-16 — 타키 주역·RiNG 시각 통합 패치
+
+- 내장 ImageGen으로 타이틀의 말차 파르페와 이미지 속 로고·깨진 글자를 제거하고 타키 손을 정리했다. 다섯 인물·의상·카페 구도를 유지했다. UI 타이틀은 HTML 텍스트로 분리한다. assets/title-screen.png.
+- 기존 assets/casual/taki.png를 인물 기준으로 새 SD를 생성했다. 긴 머리·보라 눈·긴 귀걸이·흰 셔츠·베이지 앞치마·검정 신발을 확인하고 게임에 합성해 검수했다. assets/taki-chibi.png. 첫 SD 시안은 비율이 이전 것과 비슷해 채택하지 않았다.
+- 이전 타이틀·SD는 work/visual-20261116-originals에 보존했다. MyGO 20프레임은 확대 확인하고 유지했다. 전체 PNG 목록은 VISUAL-ASSETS-20261116.md. 모든 생성 그림은 비공식 팬게임용 시안이며 공식 자산으로 표시하지 않는다.
+- 집필 참고: https://anime.bang-dream.com/mygo/character/taki/ 및 https://bang-dream.com/artist/mygo/chihaya-anon/ 와 기존 CHARACTER-NOTES.md. 애니메이션 전편 발화 대조는 미실시.
+
+최종 타이틀 프롬프트:
+Use case: precise-object-edit. Edit the supplied PROJECT RiNG title illustration, preserving the EXACT five recognizable characters, faces, hair colours, their original casual clothing, seating, café layout, sunlit warm wood atmosphere and 16:9 composition. Remove the green matcha parfait on the middle table and leave empty wooden tabletop there, with the ordinary white coffee cups and small strawberry cake retained. Taki is the long dark brown haired purple eyed girl right of centre: refine her raised hand near her cheek and other hand gesturing over the table with five anatomically natural fingers, relaxed wrists. Keep all five characters present, and keep their expressions recognizable. Remove ALL baked-in logos and illegible text from the entire illustration including the upper left; replace those areas with naturally continuous café background. Leave usable quiet background upper left for separately rendered UI title. No new text, logo, symbols or new person. Do not change outfits, lighting direction or crop any head.
+
+채택한 SD 프롬프트:
+Use case: stylized-concept. Generate a NEW single SD (chibi) Shiina Taki café worker sprite on a truly transparent alpha background. Use supplied VN atlas ONLY as character and outfit reference, not pose/scale. 3.2 heads tall, oversized expressive head, compact torso and short legs. Long straight dark brown hair with bangs, purple eyes, long silver earrings, calm focused slightly stern expression. White rolled sleeve collared shirt, beige apron tied in bow at waist, dark skirt, black loafers. Natural simple hands by sides. Fine anime cel lines, soft warm neutral shading like the reference. Full body entirely inside canvas, head near 5% from top, soles 95% from top. TRANSPARENT EMPTY BACKGROUND everywhere outside the character silhouette. No haze, no glow, no vignette, no halo, no black or white background, no shadow. No props, no text, no extra figures. Clearly super deformed compact body, not the 5-head proportions of a VN standing.
