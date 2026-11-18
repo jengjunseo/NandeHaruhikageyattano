@@ -40,7 +40,12 @@ window.RingTitle=(()=>{
   $('#titleBgmEnabled').onchange=e=>{settings.music=e.target.checked;persistSettings();setBlocked()};$('#titleBgmVolume').oninput=e=>{settings.musicVolume=Number(e.target.value)/100;persistSettings();playMusic()};
   $('#titleSfxEnabled').onchange=e=>api.preference('sound',e.target.checked);$('#titleSfxVolume').oninput=e=>{api.preference('volume',Number(e.target.value)/100);api.beep('cup')};$('#titleVnSpeed').onchange=e=>api.preference('vnSpeed',Number(e.target.value));$('#titleReduceMotion').onchange=e=>api.preference('reduceMotion',e.target.checked);
  }
- async function enter(fresh){if(!ready){if(!await prepare())return}inSession=true;panel=null;visible=false;$('#titlePanel').hidden=true;setBlocked();if(fresh)api.newGame();else api.continueGame()}
+ function showRecovery(){
+  const info=api.recoveryInfo();showPanel('recovery','자동 저장 복구','<p>자동 저장을 읽을 수 없어 원본을 보존하고 있어요. 수동 슬롯을 불러오거나 이전 정상 저장으로 돌아갈 수 있습니다.</p><button id="titleRestorePrevious" '+(info.canRecover?'':'disabled')+'>이전 정상 저장 복구</button><button id="titleExportDamaged">손상 원본 내려받기</button><button id="titleRecoverySlots">수동 슬롯 불러오기</button>');
+  if(!info.canRecover)message('복구할 이전 정상 저장이 없습니다. 수동 슬롯이나 보관한 백업을 확인해 주세요.');
+  $('#titleExportDamaged').onclick=api.exportBackup;$('#titleRecoverySlots').onclick=()=>slotView('load');$('#titleRestorePrevious').onclick=()=>confirmAction('이전 정상 저장 복구','이전 정상 저장으로 돌아갈까요? 현재 손상 원본은 별도로 보존합니다.',async()=>{try{await api.recoverPrevious()}catch{message('복구하지 못했습니다. 원본은 유지됩니다. 브라우저 저장 공간을 확인해 주세요.')}});
+ }
+ async function enter(fresh){if(!ready){if(!await prepare())return}if(fresh){try{api.preserveDamaged?.()}catch{message('손상 원본을 보존하지 못해 새 게임을 시작하지 않았습니다. 먼저 원본을 내려받아 주세요.');return;}}inSession=true;panel=null;visible=false;$('#titlePanel').hidden=true;setBlocked();if(fresh)api.newGame();else api.continueGame()}
  async function home(){api.pause();const stored=await api.save();if(!stored){message('저장하지 못했어요. 현재 진행을 수동 슬롯이나 백업 파일로 보관해 주세요.');return;}api.stopMusic();visible=true;panel=null;$('#titlePanel').hidden=true;setBlocked();$('#titleScreen [data-title-action="continue"]').disabled=!api.hasProgress();$('#titleScreen [data-title-action="start"]').focus()}
  function open(kind='menu'){
   if(kind==='save'||kind==='load'){slotView(kind);return}if(kind==='settings'){showSettings();return}
@@ -54,7 +59,9 @@ window.RingTitle=(()=>{
   document.addEventListener('pointerdown',()=>{if(panel!=='exit')playMusic()},{capture:true,passive:true});document.addEventListener('keydown',event=>{if(panel!=='exit')playMusic();if(!visible&&!panel)return;if(event.key==='Escape'){if(panel){event.preventDefault();closePanel()}return}if(event.key==='Tab'){const host=panel?$('#titlePanel'):$('#titleScreen');const nodes=[...host.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled])')].filter(node=>!node.hidden);if(!nodes.length)return;const at=nodes.indexOf(document.activeElement);if(at<0||event.shiftKey&&at===0||!event.shiftKey&&at===nodes.length-1){event.preventDefault();nodes[event.shiftKey?nodes.length-1:0].focus()}}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){audio.pause();gameAudio.pause()}else if(panel!=='exit')playMusic()});
   let resume=false;try{resume=sessionStorage.getItem('project-ring-resume-once')==='yes';sessionStorage.removeItem('project-ring-resume-once')}catch{}
-  prepare().then(ok=>{if(ok&&resume)enter(false)});
+  const damaged=['damaged','unreadable'].includes(api.recoveryInfo?.().mode);
+  if(damaged){const recovery=document.createElement('button');recovery.id='titleRecovery';recovery.textContent='자동 저장을 읽을 수 없어요 · 복구';recovery.onclick=showRecovery;$('.title-menu').appendChild(recovery);const start=$('[data-title-action="start"]');start.onclick=()=>confirmAction('새 게임 시작','손상된 자동 저장 원문을 별도로 보존한 뒤 새 게임을 시작할까요? 수동 슬롯은 유지됩니다.',()=>enter(true));}
+  prepare().then(ok=>{if(ok&&resume&&!damaged)enter(false)});
  }
  function finishLoad(){visible=false;panel=null;inSession=true;$('#titlePanel').hidden=true;setBlocked()}
  return {mount,open,home,finishLoad,get blocked(){return visible||!!panel},get visible(){return visible},get inSession(){return inSession}};

@@ -1003,7 +1003,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 
 /* cafe-v53.css */
 /* v53: navigation fixes and accessible status; original layout remains intact. */
-.header-tools .music-drawer,body.service-mode .header-tools .music-drawer {position:relative;inset:auto;margin:0;z-index:12;}
+.header-tools .music-drawer,body.service-mode .header-tools .music-drawer {display:block;position:relative;inset:auto;margin:0;z-index:12;}
 .header-tools .music-drawer summary {display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:8px 12px;box-sizing:border-box;}
 .header-tools .music-content {position:absolute;top:calc(100% + 10px);right:0;font-size:13px;}
 #workModeQuick {min-height:44px;padding:7px 12px;border:1px solid #bfd5e5;border-radius:30px;background:#eaf3fa;color:#235e88;white-space:nowrap;}

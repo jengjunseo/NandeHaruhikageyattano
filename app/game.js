@@ -389,7 +389,11 @@ function finishTitleLoad(snapshot){
  try{sessionStorage.setItem('project-ring-resume-once','yes')}catch{}
  window.location.reload();
 }
+function recoveryInfo(){let canRecover=false;try{canRecover=validBackupState(JSON.parse(localStorage.getItem(KEY+':last-good')))}catch{}return {mode:storageMode,canRecover};}
+function preserveDamaged(){if(['damaged','unreadable'].includes(storageMode)){const raw=localStorage.getItem(KEY);if(raw!==null)localStorage.setItem(KEY+':damaged',raw);}}
+async function recoverPrevious(){if(!['damaged','unreadable'].includes(storageMode))throw Error('복구 대상이 없습니다.');const value=JSON.parse(localStorage.getItem(KEY+':last-good'));if(!validBackupState(value))throw Error('복구할 정상 저장이 없습니다.');preserveDamaged();await commitSnapshot(readSavedState(value).value);window.location.reload();}
 function titleAdapter(){return {
+ recoveryInfo,preserveDamaged,recoverPrevious,exportBackup,
  snapshot:()=>JSON.parse(JSON.stringify(state)),validate:validBackupState,hasProgress:titleHasProgress,save:()=>{const result=save();return result?.then?result:storageMode==='ok'},beep,
  describe:snapshot=>snapshot.pendingStory?storyData[snapshot.pendingStory.id]?.title||'이야기 진행 중':snapshot.phase==='open'?'카페 영업 중':snapshot.phase==='closed'?'영업 정산':'영업 준비',
  pause:()=>{clearVnAutoTimer();completeVnText();stopVnTyping();vnMenuOpen=false},

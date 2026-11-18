@@ -15,5 +15,29 @@ test('music control and story tab remain separate across review viewports',async
  await start(page);await skip(page);await page.locator('[data-week=prepare]').click();for(const [width,height]of [[360,800],[390,844],[430,932],[844,390],[768,1024],[1366,768]]){await page.setViewportSize({width,height});const music=await page.locator('.header-tools .music-drawer summary').boundingBox(),story=await page.locator('nav [data-tab=story]').boundingBox();expect(music&&story).toBeTruthy();const overlap=music.x<story.x+story.width&&music.x+music.width>story.x&&music.y<story.y+story.height&&music.y+music.height>story.y;expect(overlap).toBe(false);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}await page.locator('nav [data-tab=story]').click();await expect(page.locator('#panel')).toContainText('이야기');
 });
 test('corrupt automatic accounting preserves the raw record and offers recovery',async({page})=>{
- await start(page);const raw=await page.evaluate(()=>localStorage.getItem('project-ring-phase1-v1'));await page.evaluate(raw=>{const s=JSON.parse(raw);s.accounting={};localStorage.setItem('project-ring-phase1-v1:last-good',raw);localStorage.setItem('project-ring-phase1-v1',JSON.stringify(s));},raw);await page.reload();await page.getByRole('button',{name:'이어하기 CONTINUE',exact:true}).click();await expect(page.locator('#storageWarning')).toBeVisible();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('project-ring-phase1-v1')).accounting)).toEqual({});await expect(page.locator('#recoverSave')).toBeVisible();
+ await start(page);
+ await expect.poll(()=>page.evaluate(()=>localStorage.getItem('project-ring-phase1-v1'))).not.toBeNull();
+ const raw=await page.evaluate(()=>localStorage.getItem('project-ring-phase1-v1'));
+ await page.evaluate(raw=>{const s=JSON.parse(raw);s.accounting={};localStorage.setItem('project-ring-phase1-v1:last-good',raw);localStorage.setItem('project-ring-phase1-v1',JSON.stringify(s));},raw);
+ await page.reload();
+ await expect(page.locator('[data-title-action=continue]')).toBeDisabled();
+ await expect(page.locator('#titleRecovery')).toBeVisible();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('project-ring-phase1-v1')).accounting)).toEqual({});
+ await page.locator('#titleRecovery').click();
+ await expect(page.locator('#titleRestorePrevious')).toBeEnabled();
+ await page.locator('#titleRestorePrevious').click();await page.locator('#titleConfirm').click();
+ await expect(page.locator('[data-title-action=continue]')).toBeEnabled();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('project-ring-phase1-v1:damaged')).accounting)).toEqual({});
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('project-ring-phase1-v1')).accounting)).toEqual(JSON.parse(raw).accounting);
+});
+
+test('unpaid stock stays in preparation, paid stock can open directly',async({page})=>{
+ await start(page);await skip(page);await page.locator('[data-week=prepare]').click();
+ await page.getByRole('spinbutton',{name:'커피 원두 주문 수량'}).fill('1');
+ await page.locator('#weekOpenFromPrep').click();
+ await expect(page.locator('#panel')).toContainText('미결제 발주');
+ await expect(page.locator('#clock')).toContainText('영업 준비');
+ await page.locator('#weekBasketPay').click();await page.locator('#weekOpenFromPrep').click();
+ await expect(page.locator('#clock')).toContainText('영업 중');
+ await expect(page.locator('#panel [data-make]')).toHaveCount(1);
 });
