@@ -125,6 +125,20 @@ assert.equal(rs.week.guestMemory.jun.lastResult,'wait');
 assert.equal(rs.week.guestMemory.jun.lastReferencedDay,5);
 assert.equal(rs.week.guestMemory.jun.lastOrderId,order.id);
 
+const priority=start(2),ps=priority.a.state();
+priority.a.open();
+ps.week.shift.arrivals=[1,2,3].map(at=>({at,profile:'general',preference:.5,budget:1.25,takeout:false}));
+const identify=id=>id===3?jun():null;
+priority.r.tick(ps,identify);
+priority.r.command(ps,1,'make');
+priority.r.tick(ps,identify);
+priority.r.tick(ps,identify);
+assert(priority.r.firstWork(ps,3));
+assert.equal(ps.workers.taki.id,1,'existing brew keeps its turn');
+ps.priority='serve';
+for(let i=0;i<9 && ps.workers.taki?.id!==3;i++)priority.r.tick(ps,identify);
+assert.equal(ps.workers.taki?.id,3,'next eligible brew favors the regular');
+
 const board=start(4),bs=board.a.state();
 assert(!board.r.planChoice(bs,'board','cake'));
 bs.week.morning={day:4,id:'morning_board',source:'morning',status:'completed'};
@@ -150,7 +164,17 @@ assert.equal(fsState.customers[0].maxPatience,34);
 assert.equal(fsState.week.servicePlan.lamp,fsState.customers[0].id);
 const timing={};
 for(const id of ['coffee','latte','liveSet','cake','matcha']){
-  const before=facility.r.makeSeconds(fsState,id,false),after=facility.r.makeSeconds(fsState,id,true);
+  function elapsed(machine){
+    const g=start(6),s=g.a.state();
+    if(machine){s.day=4;assert(g.r.place(s,'espresso','machine'));s.day=6;}
+    g.a.open();s.week.shift.arrivals=[];
+    s.customers.push({id:s.nextId++,menu:id,price:s.prices[id],seat:0,profile:'general',status:'waiting',patience:30,maxPatience:30});
+    const order=s.customers[0],startTick=s.tick;
+    assert.equal(g.r.command(s,order.id,'make'),'make');
+    while(order.status==='making')g.r.tick(s);
+    return s.tick-startTick;
+  }
+  const before=elapsed(false),after=elapsed(true);
   assert.equal(before-after,['coffee','latte','liveSet'].includes(id)?1:0);
   timing[id]={before,after};
 }
@@ -165,6 +189,11 @@ function fiveDays(experiment) {
       if(day===4)assert(g.r.place(s,'window','windowLamp'));
       const basket=g.r.recommendation(s).missing;
       if(g.r.basketCost(basket)<=s.money)g.r.buyStock(s,basket);
+    } else {
+      // Standard menu only. Refill by hand without using any daily proposals.
+      const basket=Object.fromEntries(Object.entries(g.r.balance.opening.stock)
+        .map(([key,target])=>[key,Math.max(0,target-s.stock[key])]));
+      if(g.r.basketCost(basket)<=s.money)g.r.buyStock(s,basket);
     }
     s.priority='serve';
     g.a.open();
@@ -176,6 +205,7 @@ function fiveDays(experiment) {
       assert.equal(s.served,1);assert.equal(s.revenue,700);
     }
     closeShift(g);
+    assert(s.revenue>0,'sales on day '+day);
     const result=statement(s);
     assert(g.a.valid(clone(s)));
     receipts.push(result);
