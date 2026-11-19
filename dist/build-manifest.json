@@ -1,8 +1,8 @@
 {
-  "version": 53,
-  "id": "v53-98c5dbdaa7501dce",
-  "entry": "game.046efa6651c1.js",
-  "styles": "styles.4d0ff562047b.css",
+  "version": 54,
+  "id": "v54-95514ec9765f816e",
+  "entry": "game.026dee2a0a8f.js",
+  "styles": "styles.4aa2c4988429.css",
   "sourceScripts": [
     "music.js",
     "final-stories.js",
@@ -51,7 +51,8 @@
     "ring-visual.css",
     "cafe-v51.css",
     "cafe-v52.css",
-    "cafe-v53.css"
+    "cafe-v53.css",
+    "cafe-v54.css"
   ],
   "firstPlayImageBytes": 1934102,
   "files": [
@@ -536,19 +537,19 @@
       "sha256": "b2c9e427b63765a15e89be026ae7aafd7aa33df0db50b8c17ac06249f1705660"
     },
     {
-      "path": "game.046efa6651c1.js",
-      "bytes": 611619,
-      "sha256": "046efa6651c1e341f2e543bc908a46ab1c220d2b22eb9f4b1ebe626530ef894f"
+      "path": "game.026dee2a0a8f.js",
+      "bytes": 634792,
+      "sha256": "026dee2a0a8f887cbed6140a826ae7474f4b7060c5f5db129b06d65123ac9e5e"
     },
     {
       "path": "index.html",
       "bytes": 6762,
-      "sha256": "78f8a18e4187aa1813a408225512e4386ba0c7dbda3b6ecb6a477ed91368712c"
+      "sha256": "66127018de07450ffd498c8f30dedf1b5c007410b126f7e2f9a67d43dd5b9be2"
     },
     {
-      "path": "styles.4d0ff562047b.css",
-      "bytes": 151220,
-      "sha256": "4d0ff562047b2ee8d6c7c5a06d26be1b01d07ca84f7b87ecc1e376996cf346a6"
+      "path": "styles.4aa2c4988429.css",
+      "bytes": 154530,
+      "sha256": "4aa2c498842979eeee16b217c2329d6039b1073fe9fb492a8c971a0e2df70c76"
     }
   ]
 }

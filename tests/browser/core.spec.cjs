@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+const v53=require('../fixtures/v53-save-samples.json');
 const start=async page=>{await page.goto('/');await expect(page.locator('[data-title-action=start]')).toBeEnabled();await page.getByRole('button',{name:'시작하기 NEW GAME',exact:true}).click();await expect(page.locator('#vnStage')).toBeVisible();};
 const skip=async page=>{await page.locator('#vnMenuToggle').click();await page.locator('#vnSkip').click();await expect(page.locator('[data-week=open]')).toBeVisible();};
 test('new game, first order, direct serve, automation and pause',async({page})=>{
@@ -40,4 +41,50 @@ test('unpaid stock stays in preparation, paid stock can open directly',async({pa
  await page.locator('#weekBasketPay').click();await page.locator('#weekOpenFromPrep').click();
  await expect(page.locator('#clock')).toContainText('영업 중');
  await expect(page.locator('#panel [data-make]')).toHaveCount(1);
+});
+
+test('v53 receipt marks a menu for the following morning',async({page})=>{
+ await page.addInitScript(save=>{
+  if(!localStorage.getItem('project-ring-phase1-v1')) localStorage.setItem('project-ring-phase1-v1',JSON.stringify(save));
+ },v53.closed);
+ await page.goto('/');
+ await page.locator('[data-title-action=continue]').click();
+ await expect(page.locator('.week-receipt')).toContainText('블렌드 커피 · ¥480에 1건 이탈');
+ await page.locator('#weekPlanTomorrow').click();
+ await expect(page.locator('.week-receipt')).toContainText('DAY 1');
+ await page.locator('#tomorrow').click();
+ await expect(page.locator('#vnStage')).toBeVisible();
+ await page.locator('#vnMenuToggle').click();await page.locator('#vnSkip').click();
+ await expect(page.locator('[data-prep-menu=coffee]')).toBeFocused();
+ await expect(page.locator('#stats')).toContainText('DAY 2');
+});
+
+test('concert reserves two portions, shown on the first service screen',async({page})=>{
+ const save=JSON.parse(JSON.stringify(v53.prep));
+ save.day=3;
+ await page.addInitScript(save=>localStorage.setItem('project-ring-phase1-v1',JSON.stringify(save)),save);
+ await page.goto('/');await page.locator('[data-title-action=continue]').click();
+ await page.getByRole('button',{name:'공연 세트 준비',exact:true}).click();
+ await page.getByRole('button',{name:'공연용 2인분 확보',exact:true}).click();
+ await expect(page.locator('.service-plan')).toContainText('현재 2인분 확보 가능');
+ await page.locator('[data-prep=stock]').click();
+ await expect(page.locator('#weekBasket')).toContainText('공연 확보 목표 2');
+ await page.locator('#weekOpenFromPrep').click();
+ await expect(page.locator('.week-scene-status')).toContainText('재료 확보 2인분');
+});
+
+test('stock checkout is reachable on portrait and landscape without scrolling the drawer',async({page})=>{
+ await start(page);await skip(page);
+ for (const [width,height] of [[375,812],[812,375]]) {
+  await page.setViewportSize({width,height});
+  await page.locator('[data-week=prepare]').click();
+  for (const id of ['#weekBasketPay','#weekOpenFromPrep']) {
+   const usable=await page.locator(id).evaluate(el=>{
+    const r=el.getBoundingClientRect();
+    return r.top>=0&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+   });
+   expect(usable,id+' '+width+'x'+height).toBe(true);
+  }
+  await page.locator('#cafeClosePanel').click();
+ }
 });

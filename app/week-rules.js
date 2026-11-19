@@ -16,6 +16,8 @@ window.RingWeek = (() => {
   const profiles = { general: '일반', window: '창가', fan: '공연 팬' };
   const reasons = { stock: '재료 부족', wait: '대기 시간 초과', full: '만석', price: '가격 이탈', closing: '마감', menu: '판매 메뉴 없음', sold: '서빙' };
   const menuIds = Object.keys(balance.menu);
+  const menuNames = {coffee:'블렌드 커피', latte:'카페 라테', cake:'오늘의 케이크', matcha:'말차 라테', liveSet:'공연 세트'};
+  const ingredientNames = {beans:'원두', milk:'우유', cake:'케이크', matcha:'말차'};
   const regularNames = { haru:'하루', mei:'메이', jun:'준' };
   const regularLines = {
     haru:{first:'안녕하세요. 오늘은 천천히 쉬었다 갈게요.',back:'지난번처럼 잠깐 쉬어 가도 되죠?',favorite:['이 향 때문에 다시 왔어요.','역시 한 모금 마시면 정신이 들어요.']},
@@ -28,6 +30,99 @@ window.RingWeek = (() => {
   const object = x => x && typeof x === 'object' && !Array.isArray(x);
   const validPlacement = (slot, id) => Object.hasOwn(slots, slot) && Object.hasOwn(items, id) && (items[id].slot === slot || id === 'poster' && slot === 'stage');
   const validAlias = value => typeof value === 'string' && Array.from(value).length <= 14;
+
+  function dayPlan(state) {
+    const plan = state.week.servicePlan;
+    return plan?.day === state.day ? plan : null;
+  }
+
+  function ensurePlan(state) {
+    return dayPlan(state) || (state.week.servicePlan = {day:state.day});
+  }
+
+  function morningSeen(state, id) {
+    return state.week.morning?.day === state.day && state.week.morning.id === id &&
+      state.week.morning.status === 'completed';
+  }
+
+  function planChoice(state, kind, value) {
+    if (state.phase !== 'prep') return false;
+    if (kind === 'live' && live(state.day) && ['off','shared','reserve'].includes(value)) {
+      ensurePlan(state).live = value;
+      state.enabled.liveSet = value !== 'off';
+      return true;
+    }
+    if (kind === 'window' && state.day === 2 && morningSeen(state,'morning_window') && typeof value === 'boolean') {
+      ensurePlan(state).window = value;
+      return true;
+    }
+    if (kind === 'board' && state.day === 4 && morningSeen(state,'morning_board') &&
+        (value === null || menuIds.includes(value) && value !== 'liveSet' && available(state,value) && enough(state,value))) {
+      ensurePlan(state).board = value;
+      return true;
+    }
+    return false;
+  }
+
+  function validPlan(state, week) {
+    const plan = week.servicePlan;
+    const step = week.nextPrep;
+    if (step !== undefined && (!object(step) || ![state.day,state.day+1].includes(step.day) ||
+      !(step.kind === 'stock' && Object.hasOwn(ingredientNames,step.id) ||
+        step.kind === 'menu' && menuIds.includes(step.id) ||
+        step.kind === 'work' && step.id === 'priority'))) return false;
+    if (plan === undefined) return true;
+    if (!object(plan) || plan.day !== state.day ||
+        plan.live !== undefined && !['off','shared','reserve'].includes(plan.live) ||
+        plan.window !== undefined && typeof plan.window !== 'boolean' ||
+        plan.board != null && (!menuIds.includes(plan.board) || plan.board === 'liveSet')) return false;
+    const shift = week.shift;
+    for (const key of ['priority','regular','lamp','machine']) {
+      if (plan[key] != null && (!count(plan[key]) || plan[key] === 0 || plan[key] >= state.nextId)) return false;
+    }
+    if (plan.priority != null && !state.customers.some(c=>c.id===plan.priority && ['waiting','ready'].includes(c.status))) return false;
+    if (plan.boardUsed !== undefined && (!count(plan.boardUsed) || plan.boardUsed>2)) return false;
+    if (plan.allocation === undefined) return true;
+    const a = plan.allocation;
+    return !!shift && object(a) && ['held','initial','released','used'].every(k=>count(a[k]) && a[k]<=2) &&
+      a.initial === a.held+a.released+a.used &&
+      Object.entries(balance.menu.liveSet.recipe).every(([id,n])=>a.held*n<=state.stock[id]);
+  }
+
+  function reservePreview(state) {
+    const spec = balance.menu.liveSet.recipe;
+    const target = dayPlan(state)?.live === 'reserve' && state.enabled.liveSet ? 2 : 0;
+    const units = Math.min(target,...Object.entries(spec).map(([id,n])=>Math.floor(state.stock[id]/n)));
+    return {target,units,missing:Object.entries(spec).filter(([id,n])=>state.stock[id]<n*target)
+      .map(([id,n])=>ingredientNames[id]+' '+(n*target-state.stock[id])+'개 부족')};
+  }
+
+  function usable(state, ingredient, menu) {
+    const held = menu === 'liveSet' ? 0 : dayPlan(state)?.allocation?.held || 0;
+    return state.stock[ingredient] - held*(balance.menu.liveSet.recipe[ingredient] || 0);
+  }
+
+  function releaseReserve(state, force = false) {
+    const a = dayPlan(state)?.allocation;
+    if (!a?.held || (!force && livePhase(state) === 'before')) return;
+    const pending = force ? 0 : state.customers.filter(c=>c.status==='waiting' && c.menu==='liveSet').length;
+    const returned = Math.max(0,a.held-pending);
+    a.held -= returned;
+    a.released += returned;
+  }
+
+  function firstWork(state,id) {
+    const guest = state.customers.find(c=>c.id===id);
+    const plan = dayPlan(state);
+    if (state.phase!=='open' || plan?.regular!==id || !['waiting','ready'].includes(guest?.status)) return false;
+    plan.priority=id;
+    return true;
+  }
+
+  function advancePlan(state) {
+    delete state.week.servicePlan;
+    if (state.week.nextPrep?.day !== state.day) delete state.week.nextPrep;
+  }
 
   function init(state, fresh = false, seed = Date.now() >>> 0) {
     if (state.week) return state.week;
@@ -82,7 +177,11 @@ window.RingWeek = (() => {
     }
     if (week.guestMemory !== undefined && (!object(week.guestMemory) || Object.entries(week.guestMemory).some(([id,m])=>
       !Object.hasOwn(regularNames,id) || !object(m) || !count(m.visits) || !count(m.lastDay) || m.lastDay>state.day ||
+      (m.lastOrderId!==undefined&&(!count(m.lastOrderId)||m.lastOrderId>=state.nextId)) ||
+      (m.lastReferencedDay!==undefined&&(!count(m.lastReferencedDay)||m.lastReferencedDay>state.day)) ||
+      (m.lastServedDay!==undefined&&(!count(m.lastServedDay)||m.lastServedDay>m.lastDay)) ||
       (m.lastMenu!==null&&!menuIds.includes(m.lastMenu)) || (m.lastServed!==null&&!menuIds.includes(m.lastServed)) || !Object.hasOwn(reasons,m.lastResult)))) return false;
+    if (!validPlan(state,week)) return false;
     if (week.shift === null) return state.phase !== 'open';
     const shift = week.shift;
     return object(shift) && shift.day === state.day && count(shift.seconds) && shift.seconds >= 65 && shift.seconds <= 75 &&
@@ -113,7 +212,8 @@ window.RingWeek = (() => {
   }
 
   function available(state, id, day = state.day) {
-    return state.enabled[id] && (id !== 'liveSet' || live(day) && (day !== state.day || (state.week.shift?.sets || 0) < setLimit(day)));
+    return state.enabled[id] && (id !== 'liveSet' || live(day) && (day !== state.day ||
+      (state.week.shift?.sets || 0) < setLimit(day) && (!dayPlan(state)?.allocation || livePhase(state)==='before')));
   }
 
   function setLimit(day) {
@@ -166,15 +266,28 @@ window.RingWeek = (() => {
   }
 
   function enough(state, id) {
-    return Object.entries(balance.menu[id].recipe).every(([k, n]) => state.stock[k] >= n);
+    return Object.entries(balance.menu[id].recipe).every(([k, n]) => usable(state,k,id) >= n);
   }
 
   function stat(state, id) {
-    return state.menuHistory.today[id] ||= { offered: 0, sold: 0, priceRejected: 0 };
+    return state.menuHistory.today[id] ||= { offered: 0, sold: 0, priceRejected: 0, accepted: 0 };
   }
 
   const text=(id,params)=>window.RingNarrative.get(id,params);
-  function guestGreeting(state,guest){const who=regularNames[guest.regularId]?guest.regularId:'general',memory=state.week.guestMemory?.[who];if(who==='general')return text('guest.general.'+(guest.takeout?'takeout':'here'));return text('guest.'+who+'.'+(!memory?.visits?'first':['wait','stock'].includes(memory.lastResult)?'missed':memory.lastServed&&memory.lastServed===guest.menu?'same':'back'));}
+  function guestGreeting(state,guest){
+    const who=regularNames[guest.regularId]?guest.regularId:'general';
+    if (who!=='general' && menuIds.includes(guest.remembers)) {
+      const menu=menuNames[guest.remembers];
+      return guest.menu===guest.remembers ? {
+        haru:'지난번 '+menu+', 오늘도 한 잔 부탁해요.',
+        mei:'저번에 먹은 '+menu+'가 생각나서 왔어요.',
+        jun:'지난번 '+menu+', 오늘도 될까요?'
+      }[who] : '지난번엔 '+menu+'였죠. 오늘은 이걸로 할게요.';
+    }
+    const memory=state.week.guestMemory?.[who];
+    if(who==='general')return text('guest.general.'+(guest.takeout?'takeout':'here'));
+    return text('guest.'+who+'.'+(!memory?.visits?'first':['wait','stock'].includes(memory.lastResult)?'missed':memory.lastServed&&memory.lastServed===guest.menu?'same':'back'));
+  }
 
   function terminal(state, guest, reason) {
     const shift = state.week.shift;
@@ -208,10 +321,17 @@ window.RingWeek = (() => {
     if (Object.hasOwn(regularNames,guest.regularId)) {
       state.week.guestMemory ||= {};
       state.week.guestMemory[guest.regularId] = {visits:(previous?.visits||0)+1,lastDay:state.day,lastMenu:guest.menu||null,
-        lastServed:reason==='sold'?guest.menu:previous?.lastServed??null,lastResult:reason};
+        lastServed:reason==='sold'?guest.menu:previous?.lastServed??null,lastResult:reason,lastOrderId:guest.id,
+        ...(reason==='sold'||previous?.lastServed?{lastServedDay:reason==='sold'?state.day:previous.lastServedDay??previous.lastDay}:{}),
+        ...(previous?.lastReferencedDay!==undefined?{lastReferencedDay:previous.lastReferencedDay}:{})};
     }
-    shift.ledger.push({ id: guest.id, menu: guest.menu || null, reason, profile: guest.profile || 'general',
-      takeout: !!guest.takeout, ...(moments.length?{moments}:{}), ...(guest.regularId?{regularId:guest.regularId}:{}), reaction, revenue: reason === 'sold' ? guest.price : 0, cost: guest.materialCost || 0 });
+    shift.ledger.push({ id: guest.id, menu: guest.menu || null, reason, at:state.tick, profile: guest.profile || 'general',
+      takeout: !!guest.takeout, ...(moments.length?{moments}:{}), ...(guest.regularId?{regularId:guest.regularId}:{}),
+      ...(guest.menu?{quotedPrice:guest.price??state.prices[guest.menu]}:{}),
+      ...(guest.status&&guest.menu==='liveSet'?{accepted:true}:{}),
+      ...(guest.setReplaced?{setReplaced:true}:{}),
+      ...(count(guest.seat)?{seat:guest.seat}:{}),
+      reaction, revenue: reason === 'sold' ? guest.price : 0, cost: guest.materialCost || 0 });
     if (reason === 'sold') {
       state.money += guest.price;
       state.revenue += guest.price;
@@ -227,7 +347,7 @@ window.RingWeek = (() => {
         state.failures.stockWait++;
         state.failures.missing ||= {};
         if (guest.menu) for (const [key,n] of Object.entries(balance.menu[guest.menu].recipe)) {
-          if (state.stock[key] < n) state.failures.missing[key] = (state.failures.missing[key] || 0) + 1;
+          if (usable(state,key,guest.menu) < n) state.failures.missing[key] = (state.failures.missing[key] || 0) + 1;
         }
       }
       if (reason === 'wait' || reason === 'closing') state.failures.wait++;
@@ -239,6 +359,9 @@ window.RingWeek = (() => {
     if (state.workers.taki?.id === guest.id) state.workers.taki = null;
     if (state.week.nextJob?.id === guest.id) state.week.nextJob = null;
     if (state.week.milkOrder === guest.id) state.week.milkOrder = null;
+    const plan = dayPlan(state);
+    if (plan?.priority===guest.id) delete plan.priority;
+    releaseReserve(state);
     return true;
   }
 
@@ -250,11 +373,18 @@ window.RingWeek = (() => {
     state.week.milkOrder = null;
     if (state.day === 6) state.fatigue = Math.max(0, state.fatigue - 8);
     state.week.shift = { day: state.day, seconds: plan.seconds, cursor: 0, arrivals, outside: [], ledger: [], sets: 0, coach: null };
+    const service=ensurePlan(state);
+    if (live(state.day)) {
+      const {units}=reservePreview(state);
+      service.allocation={initial:units,held:units,used:0,released:0};
+    }
     if (first) {
       const id = state.nextId++;
       state.customers.push({ id, menu: 'cake', price: state.prices.cake, seat: 0, profile: 'general',
         status: 'waiting', patience: 26, maxPatience: 26 });
-      stat(state, 'cake').offered++;
+      const tutorial=stat(state,'cake');
+      tutorial.offered++;
+      tutorial.accepted=(tutorial.accepted||0)+1;
       state.week.shift.coach = id;
     }
   }
@@ -281,6 +411,11 @@ window.RingWeek = (() => {
     const spec = balance.menu[guest.menu];
     if (kind === 'make') {
       let cost = 0;
+      const plan = dayPlan(state);
+      if (guest.menu==='liveSet' && plan?.allocation?.held) {
+        plan.allocation.held--;
+        plan.allocation.used++;
+      }
       for (const [key, n] of Object.entries(spec.recipe)) {
         state.stock[key] -= n;
         cost += balance.ingredients[key] * n;
@@ -293,6 +428,7 @@ window.RingWeek = (() => {
       }
       const seconds = state.week.shift.coach === id ? 1 :
         makeSeconds(state,guest.menu);
+      if (plan && plan.machine===undefined && spec.station==='espresso' && has(state,'machine')) plan.machine=id;
       state.workers.taki = { id, kind, remaining: seconds };
     } else {
       guest.status = 'serving';
@@ -300,10 +436,12 @@ window.RingWeek = (() => {
       state.workers.taki = { id, kind, remaining: seconds };
     }
     if (state.week.nextJob?.id === id && state.week.nextJob.kind === kind) state.week.nextJob = null;
+    const plan = dayPlan(state);
+    if (plan?.priority===id) delete plan.priority;
     return kind;
   }
 
-  function candidates(state, profile, budget, preference, favorite) {
+  function candidates(state, profile, budget, preference, favorite, board) {
     const order = [...balance.profiles[profile].preference];
     if (schedule(state.day).type === 'rain' && profile !== 'fan') order.unshift('matcha');
     if (has(state, 'display') && profile !== 'fan' && preference < .25) {
@@ -311,7 +449,10 @@ window.RingWeek = (() => {
       if (i > 0) order.splice(i - 1, 0, ...order.splice(i, 1));
     }
     if (favorite && !(profile === 'fan' && available(state,'liveSet'))) order.unshift(favorite);
-    const choices = [...new Set(order)].filter(id => available(state, id)).slice(0, 2);
+    const ranked = [...new Set(order)].filter(id => available(state, id));
+    const pos = ranked.indexOf(board);
+    if (pos>0) ranked.splice(pos-1,0,...ranked.splice(pos,1));
+    const choices = ranked.slice(0, 2);
     return { choices, pick: choices.find(id => enough(state, id) && state.prices[id] <= Math.round(balance.menu[id].basePrice * budget)) };
   }
 
@@ -324,14 +465,20 @@ window.RingWeek = (() => {
   function switchOrder(state, id, expected) {
     const guest = state.customers.find(c => c.id === id);
     if (!guest || !menuIds.includes(expected) || alternate(state, guest) !== expected) return false;
-    if (guest.menu === 'liveSet') state.week.shift.sets--;
+    if (guest.menu === 'liveSet') {
+      state.week.shift.sets--;
+      guest.setReplaced=true;
+    }
     if (expected === 'liveSet') state.week.shift.sets++;
     guest.menu = expected;
     guest.price = state.prices[expected];
     guest.switched = true;
     stat(state,expected).offered++;
+    const stats=stat(state,expected);
+    stats.accepted=(stats.accepted||0)+1;
     if (state.week.nextJob?.id === id) state.week.nextJob = null;
     if (state.week.milkOrder === id) state.week.milkOrder = null;
+    releaseReserve(state);
     return true;
   }
 
@@ -352,7 +499,12 @@ window.RingWeek = (() => {
   function enter(state, arrival, seat, regularForId, events) {
     const id = state.nextId++;
     const regular = regularForId(id);
-    const { choices, pick } = candidates(state, arrival.profile, arrival.budget, arrival.preference,regular?.favorite);
+    const service = ensurePlan(state);
+    const board = !regular && arrival.profile!=='fan' && state.tick<state.week.shift.seconds/2 &&
+      (service.boardUsed||0)<2 && service.board && available(state,service.board) && enough(state,service.board)
+      ? service.board : null;
+    if (board) service.boardUsed=(service.boardUsed||0)+1;
+    const { choices, pick } = candidates(state, arrival.profile, arrival.budget, arrival.preference,regular?.favorite,board);
     if (!pick) {
       const price = choices.find(menu => enough(state, menu));
       const reason = price ? 'price' : choices.length ? 'stock' : 'menu';
@@ -364,10 +516,24 @@ window.RingWeek = (() => {
     }
     if (pick === 'liveSet') state.week.shift.sets++;
     stat(state,pick).offered++;
+    const stats=stat(state,pick);
+    stats.accepted=(stats.accepted||0)+1;
     const patience = balance.profiles[arrival.profile].patience +
       (arrival.profile === 'window' && has(state, 'windowLamp') ? 3 : 0) +
       (regular ? Math.min(4, state.regulars[regular.id] || 0) : 0) + (state.nextPerk === 'patient' ? 4 : 0);
+    const lamp = arrival.profile==='window' && has(state,'windowLamp');
+    if (lamp && service.lamp===undefined) service.lamp=id;
+    let remembers;
+    if (regular && service.regular===undefined) {
+      service.regular=id;
+      const memory=state.week.guestMemory?.[regular.id];
+      if (memory?.lastServed && (memory.lastServedDay??memory.lastDay)<state.day && memory.lastReferencedDay!==state.day) {
+        remembers=memory.lastServed;
+        memory.lastReferencedDay=state.day;
+      }
+    }
     state.customers.push({ id, menu: pick, price: state.prices[pick], seat, profile: arrival.profile, budget: arrival.budget,
+      ...(remembers?{remembers}:{}),
       takeout: arrival.takeout, regularId: regular?.id || null, regularName: regular?.name || null, favorite:regular?.favorite||null,
       status: 'waiting', patience, maxPatience: patience });
     events.push('door');
@@ -384,6 +550,12 @@ window.RingWeek = (() => {
     const ready = state.customers.filter(c => c.status === 'ready').sort((a, b) => a.patience - b.patience)[0];
     const waiting = state.customers.find(c => c.status === 'waiting' && enough(state, c.menu));
     const autoPickup = state.priority === 'pickup' && state.day >= 3;
+    const priority=dayPlan(state)?.priority;
+    const preferred=state.customers.find(c=>c.id===priority);
+    if (preferred && (autoPickup || ['make','serve'].includes(state.priority))) {
+      if (preferred.status==='ready') return command(state,priority,'serve');
+      if (!pickupFull(state) && !state.week.milkOrder && !ready && !autoPickup && enough(state,preferred.menu)) return command(state,priority,'make');
+    }
     if (ready && (autoPickup || state.priority === 'serve' || state.priority === 'make' &&
         (!waiting || ready.patience <= 6 || state.customers.filter(c => c.status === 'ready').length >= capacity(state)))) {
       return command(state, ready.id, 'serve');
@@ -396,7 +568,10 @@ window.RingWeek = (() => {
     const shift = state.week.shift, events = [];
     const coach = shift.coach !== null;
     const worker = state.workers.taki;
+    const stage=livePhase(state);
     if (!coach) state.tick++;
+    if (stage==='before' && livePhase(state)==='during') events.push('choice');
+    releaseReserve(state);
     if (worker && --worker.remaining <= 0) {
       const guest = state.customers.find(c => c.id === worker.id);
       state.workers.taki = null;
@@ -440,6 +615,7 @@ window.RingWeek = (() => {
       }
     }
     const close = state.tick >= shift.seconds && !state.customers.length && !state.workers.taki;
+    if (close) releaseReserve(state,true);
     if (!close) {
       const next = startNext(state);
       if (next === 'make' || next === 'serve') events.push(next);
@@ -450,7 +626,8 @@ window.RingWeek = (() => {
   function recommendation(state, day = state.day) {
     const plan = schedule(day);
     const availableMenus = menuIds.filter(id => state.enabled[id] && (id !== 'liveSet' || live(day)));
-    const low = { beans: 0, milk: 0, cake: 0, matcha: 0 }, high = { ...low }, target = { ...low };
+    const low = { beans: 0, milk: 0, cake: 0, matcha: 0 }, high = { ...low }, target = { ...low }, general = { ...low };
+    const reserve=day===state.day?reservePreview(state).target:0;
     const weight = Object.fromEntries(availableMenus.map(id => [id, 0]));
     for (const [i, profile] of Object.keys(profiles).entries()) {
       const order=plan.type==='rain'&&profile!=='fan'?['matcha',...balance.profiles[profile].preference]:balance.profiles[profile].preference;
@@ -462,15 +639,16 @@ window.RingWeek = (() => {
       const previous = state.week.yesterday?.[id];
       const estimate = plan.visits * weight[id] / total;
       let n = Math.max(0, Math.round(previous ? (estimate * 2 + previous.sold + previous.missed) / 3 : estimate));
-      if (id === 'liveSet') n = Math.min(n, setLimit(day));
+      if (id === 'liveSet') n = Math.min(Math.max(reserve,n), setLimit(day));
       for (const [ingredient, amount] of Object.entries(balance.menu[id].recipe)) {
         low[ingredient] += Math.max(0, n - 1) * amount;
         target[ingredient] += n * amount;
+        if (id!=='liveSet') general[ingredient] += n*amount;
         high[ingredient] += (id==='liveSet'?Math.min(setLimit(day),n+1):n+1) * amount;
       }
     }
     const missing = Object.fromEntries(Object.entries(target).map(([id, n]) => [id, Math.max(0, n - state.stock[id])]));
-    return { low, high, missing, cost: basketCost(missing) };
+    return { low, high, missing, cost: basketCost(missing), general, reserve };
   }
 
   function basketCost(basket) {
@@ -542,6 +720,7 @@ window.RingWeek = (() => {
   }
 
   function close(state) {
+    releaseReserve(state,true);
     if (!state.week.firstClosed) {
       state.week.photos.push({ day:state.day, alias:state.week.alias, placements:{ ...state.week.placements } });
     }
@@ -591,11 +770,59 @@ window.RingWeek = (() => {
   function quietLine(state){if(state.customers.length||state.workers.taki)return '';if(livePhase(state)==='after')return liveAfter(state);if(state.week.guestMemory?.jun?.lastServed==='latte')return '타키: '+text('taki.remember');const sold=Object.entries(state.menuHistory.today).filter(([,x])=>x.sold>0).sort((a,b)=>b[1].sold-a[1].sold)[0];return '타키: '+(sold?text('taki.sales',{menu:({coffee:'커피',latte:'라테',cake:'케이크',matcha:'말차 라테',liveSet:'공연 세트'}[sold[0]]),count:sold[1].sold,unit:/cake|liveSet/.test(sold[0])?'개':'잔'}):text('taki.idle'));}
   function facilityCompare(state,id) {
     if(id==='windowLamp')return '창가 손님 대기 '+balance.profiles.window.patience+' → '+(balance.profiles.window.patience+3)+'초 · 창가 방문 비중 +12%p (상한 적용)';
-    if(id==='machine')return '현재 피로 기준 · 커피 '+makeSeconds(state,'coffee',false)+' → '+makeSeconds(state,'coffee',true)+'초 / 라테 '+makeSeconds(state,'latte',false)+' → '+makeSeconds(state,'latte',true)+'초';
+    if(id==='machine')return '현재 피로 기준 · '+menuIds.filter(menu=>balance.menu[menu].station==='espresso')
+      .map(menu=>menuNames[menu]+' '+makeSeconds(state,menu,false)+' → '+makeSeconds(state,menu,true)+'초').join(' · ');
     return items[id]?.effect||'';
+  }
+
+  function nextAction(state) {
+    const rows=state.week.shift?.ledger || [];
+    const tally=reason=>rows.filter(row=>row.reason===reason).length;
+    if (live(state.day) && state.enabled.liveSet) {
+      const stock=rows.filter(row=>row.menu==='liveSet' && row.reason==='stock').length;
+      if (stock) {
+        const id=Object.keys(balance.menu.liveSet.recipe).find(key=>state.failures.missing[key]) || 'beans';
+        return {kind:'stock',id,label:'공연 세트 재료 부족 '+stock+'건 · '+ingredientNames[id]};
+      }
+    }
+    const [reason,n]=[['stock',tally('stock')],['wait',tally('wait')+tally('closing')],['price',tally('price')]]
+      .sort((a,b)=>b[1]-a[1])[0];
+    if (!n) return null;
+    if (reason==='wait') return {kind:'work',id:'priority',label:'대기 중 놓친 주문 '+n+'건 · 업무 방식 확인'};
+    if (reason==='stock') {
+      const id=Object.keys(ingredientNames).filter(key=>state.failures.missing[key])
+        .sort((a,b)=>state.failures.missing[b]-state.failures.missing[a])[0];
+      return id ? {kind:'stock',id,label:'재료 부족 '+n+'건 · '+ingredientNames[id]} : null;
+    }
+    const counts=id=>rows.filter(row=>row.reason==='price'&&row.menu===id).length;
+    const id=menuIds.slice().sort((a,b)=>counts(b)-counts(a))[0];
+    const price=rows.find(row=>row.menu===id&&row.reason==='price')?.quotedPrice ?? state.prices[id];
+    return {kind:'menu',id,label:menuNames[id]+' · ¥'+price.toLocaleString()+'에 '+counts(id)+'건 이탈'};
+  }
+
+  function dailyLine(state) {
+    const plan=dayPlan(state);
+    if (state.day===2 && morningSeen(state,'morning_window')) return plan?.window
+      ? '타키: 창가 두 의자는 아침 그대로였어. 그림자는 먼저 퇴근했지만.'
+      : '타키: 오늘은 평소처럼 열었어. 토모리가 오면 창가 자리부터 봐야지.';
+    if (plan?.board) return state.menuHistory.today[plan.board]?.sold
+      ? '타키: '+menuNames[plan.board]+' 나갔어. 아논, 별 그림 덕분이라고는 안 했어.'
+      : '타키: '+menuNames[plan.board]+'는 못 건넸네. 내일 칠판은 다시 쓰면 돼.';
+    const regular=state.week.shift?.ledger.find(row=>row.id===plan?.regular);
+    if (regular) return regularNames[regular.regularId]+' · '+regular.reaction;
+    return dayNotes(state)[0] || (live(state.day)?liveAfter(state):'');
+  }
+
+  function previousMenu(state) {
+    const previous=state.menuHistory.yesterday;
+    if (!previous) return null;
+    const ranked=menuIds.filter(id=>previous[id]?.priceRejected||previous[id]?.sold);
+    return ranked.sort((a,b)=>(previous[b].priceRejected||0)-(previous[a].priceRejected||0) ||
+      (previous[b].sold||0)-(previous[a].sold||0))[0] || null;
   }
 
   return { makeSeconds, livePhase, liveAfter, dayNotes, quietLine, facilityCompare, init, valid, balance, stations, slots, items, profiles, reasons, has, schedule, live, available, setLimit,
     open, command, tick, recommendation, buyStock, basketCost, place, undo, unlocked, syncUpgrades, close,
-    enough, alternate, switchOrder, cancel, guestGreeting, regularNames, modeHelp };
+    enough, alternate, switchOrder, cancel, guestGreeting, regularNames, modeHelp,
+    dayPlan, planChoice, morningSeen, reservePreview, usable, firstWork, advancePlan, nextAction, dailyLine, previousMenu };
 })();

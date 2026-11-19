@@ -1027,3 +1027,90 @@ body.title-active .save-status {display:none;}
  .save-slot small,.slot-copy>span {font-size:12px;}
 }
 @media(max-height:450px){.save-status {display:none;}#workModeQuick {min-height:36px;}}
+
+/* cafe-v54.css */
+.service-plan {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid #cbdce9;
+  border-radius: 12px;
+  background: #eef5fc;
+  color: #254961;
+}
+.service-plan h3 { margin: 0 0 7px; font-size: 1rem; }
+.service-plan p { margin: 7px 0; line-height: 1.5; }
+.service-plan button { min-height: 44px; margin: 3px 4px 3px 0; }
+.service-plan [aria-pressed=true] { background: #215e92; color: white; border-color: #215e92; }
+.cafe-day-intro button { min-height: 44px; font-size: .86rem; line-height: 1.25; }
+.stock-checkout {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  padding: 8px 0 max(6px, env(safe-area-inset-bottom));
+  background: #f8fbfe;
+  box-shadow: 0 -7px 14px #3f577315;
+}
+.stock-checkout p { margin: 0 0 6px; }
+.stock-checkout p:empty { display: none; }
+.stock-actions { display: flex; gap: 6px; align-items: stretch; }
+.stock-actions[hidden] { display: none; }
+.stock-actions button { flex: 1; min-height: 44px; line-height: 1.2; margin: 0; }
+.stock-actions #weekOpenFromPrep { margin: 0; width: auto; }
+.stock-actions + .stock-actions:not([hidden]) { margin-top: 6px; }
+.next-prep-focus { outline: 2px solid #6753a6; outline-offset: -2px; scroll-margin: 8px; }
+.week-stock label { scroll-margin-bottom: 92px; }
+.window-reservation { --pin-x: 15%; --pin-y: 59%; font-size: .76rem; padding: 5px 7px; }
+.cafe-chalk-line {
+  position: absolute;
+  left: 28%;
+  top: 27%;
+  background: #243630;
+  color: #f4f1e2;
+  border: 3px solid #987654;
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-size: clamp(.69rem, 1.3vw, .92rem);
+  z-index: 4;
+}
+.guest-handoff {
+  position: absolute;
+  z-index: 9;
+  left: clamp(3px, calc(var(--handoff-x) - 72px), calc(100% - 148px));
+  bottom: var(--handoff-y);
+  max-width: 178px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  background: #f8fbfe;
+  color: #214764;
+  border: 1px solid #77a7c2;
+  border-radius: 8px;
+  font-size: .78rem;
+  pointer-events: none;
+}
+.guest-handoff .menu-art { flex: 0 0 22px; width: 22px; height: 22px; }
+.guest-handoff small { display: block; color: #3a5366; font-size: .72rem; }
+.service-tag { margin: 5px 0; color: #4a3888; font-weight: 650; font-size: .83rem; }
+[data-first-work] { min-height: 44px; }
+@media (max-width: 700px) {
+  body.week-mode[data-cafe-panel=prep][data-phase=prep]:not(.week-editing) aside {
+    position: fixed;
+    inset: 77px 8px max(8px, env(safe-area-inset-bottom));
+    z-index: 20;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    width: auto;
+  }
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] #panel { min-height: 0; max-height: none; }
+}
+@media (max-height: 450px) and (min-width: 701px) {
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] aside { height: calc(100dvh - 65px); max-height: none; }
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] #panel { min-height: 0; padding: 8px 12px; }
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] #tutorial { display: none; }
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] #cafeClosePanel { position: absolute; right: 5px; top: 4px; z-index: 3; }
+  body.week-mode[data-cafe-panel=prep][data-phase=prep] aside nav { padding-right: 85px; }
+  #prepNav button { white-space: nowrap; font-size: .76rem; padding-inline: 5px; }
+  .stock-checkout { padding-top: 4px; }
+}

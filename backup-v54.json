@@ -1,0 +1,512 @@
+{
+  "version": 54,
+  "backedUpOn": "2026-11-19",
+  "buildId": "v54-95514ec9765f816e",
+  "files": [
+    {
+      "path": "dist/assets/anon-wink.png",
+      "bytes": 1048906,
+      "sha256": "b3973e83d710b4f3fca469fbd921a9eed9428a2d5332b779db0cf5ddfadedf15"
+    },
+    {
+      "path": "dist/assets/anon-worried.png",
+      "bytes": 1043838,
+      "sha256": "508a5d6ace0ed3904ce62ea3d3cd405755556bba4acf6e8c47c7a1753fc50778"
+    },
+    {
+      "path": "dist/assets/anon.png",
+      "bytes": 1067942,
+      "sha256": "e8fcf848442c69308b933fdb42571577789b59ac5322b9dca68b3274a4362423"
+    },
+    {
+      "path": "dist/assets/cafe-display-upgraded.png",
+      "bytes": 2249353,
+      "sha256": "842cf3884c739b7f4bcafd7e2e259828e753a10792a1a03a59a268556b362eda"
+    },
+    {
+      "path": "dist/assets/cafe-display-v52.png",
+      "bytes": 1966083,
+      "sha256": "71554e0f344fb746208b873767ef5e750280e010e1c71962ff1dfaeecf35bf1b"
+    },
+    {
+      "path": "dist/assets/cafe-jazz.mp3",
+      "bytes": 9069455,
+      "sha256": "322103dd6ac5fae4872122f91d32cccd4d964b86d300585a5a0cdfaf7048af5d"
+    },
+    {
+      "path": "dist/assets/cafe-v52.png",
+      "bytes": 1936912,
+      "sha256": "0bfd183c03d8f273dff41aea004ce981b76baf9bf17664c8071326f23d22cbb7"
+    },
+    {
+      "path": "dist/assets/cafe.png",
+      "bytes": 2420506,
+      "sha256": "ca1b73176af22c0d8a8d5ab5bd2b6d77dab4704e4d538f58373b0560da91cf2d"
+    },
+    {
+      "path": "dist/assets/casual/anon.png",
+      "bytes": 2073053,
+      "sha256": "f8d269d212d9d9c9ab0c6986c23f5326b589cfd738ec56557acc7855831fb747"
+    },
+    {
+      "path": "dist/assets/casual/emotes.png",
+      "bytes": 595756,
+      "sha256": "b9e4aa7f9d32c15f24bc28e728a1b9fde8ef8a89abd0c5c9f9ab2cd3b5723a71"
+    },
+    {
+      "path": "dist/assets/casual/rana.png",
+      "bytes": 1422645,
+      "sha256": "641b0fb4948e42893b98668c2e37f18c5177bdbf2209279407946146297dcdb3"
+    },
+    {
+      "path": "dist/assets/casual/soyo.png",
+      "bytes": 2051482,
+      "sha256": "60b32048360068c07f15acdd52b8fdbd1c65481e046401e14500b1e7bf93cec5"
+    },
+    {
+      "path": "dist/assets/casual/taki.png",
+      "bytes": 1622986,
+      "sha256": "7a24b5b015b9bd743b147143f4585741991b32f7e52cce434157bdaf7c0a97ee"
+    },
+    {
+      "path": "dist/assets/casual/tomori.png",
+      "bytes": 1447415,
+      "sha256": "bef31a648e7e845599ad30f43b518b73fb1f68585dc79d20b07910c5d7cfc75c"
+    },
+    {
+      "path": "dist/assets/furniture-v51.png",
+      "bytes": 1571180,
+      "sha256": "9649864dc07ba96908f74c3fe4a3c99b70f6dea98b22b96268cdb52a27cc30ce"
+    },
+    {
+      "path": "dist/assets/furniture-v52.png",
+      "bytes": 927116,
+      "sha256": "745489e44f82878e89bed4697f050f2e34dc32ded121f56720e898c6bf98750d"
+    },
+    {
+      "path": "dist/assets/haru-vn.png",
+      "bytes": 989164,
+      "sha256": "ed5756312ee2ac8c82e51ff08225289dd766728088a0b9a020f5cdbb631d8c23"
+    },
+    {
+      "path": "dist/assets/jun-vn.png",
+      "bytes": 904312,
+      "sha256": "c4910ad9687a7e7b137fed88e2bfba96affa43b9643e639e97e71450e4bc72a4"
+    },
+    {
+      "path": "dist/assets/mei-vn.png",
+      "bytes": 911114,
+      "sha256": "e9585ba2e2b0dc96f9efbd6e67a49691a48cfa886fc0d9012b9dcb3375e6f05b"
+    },
+    {
+      "path": "dist/assets/menu-atlas.png",
+      "bytes": 2249834,
+      "sha256": "f3b8b417868ee60e647ce5c5406b3e0c116b3ea597bb24b139e9a5154c95b1e9"
+    },
+    {
+      "path": "dist/assets/MUSIC-CREDITS.txt",
+      "bytes": 764,
+      "sha256": "48c7da451b6a2ce1fed1b81f481fca9c5b3e06a39f59fd8c2c3b9a58022f6ccd"
+    },
+    {
+      "path": "dist/assets/mutsumi.png",
+      "bytes": 1454719,
+      "sha256": "59d0fd9a72f83f09d15a7761c47d26ad2c3860d21256e26c8e0f4d849da865bd"
+    },
+    {
+      "path": "dist/assets/nyamu.png",
+      "bytes": 398695,
+      "sha256": "5fdca5963328d055580617085eab30f318a55667fb4aa4920445681dcd713019"
+    },
+    {
+      "path": "dist/assets/optimized/anon-wink.webp",
+      "bytes": 117288,
+      "sha256": "34e6e4e7548368b16b309b6d97c8f18c78d25cfbb521980312159e632d8222c2"
+    },
+    {
+      "path": "dist/assets/optimized/anon-worried.webp",
+      "bytes": 110318,
+      "sha256": "6bc4fd766e2f7abfbe24e93f578c2fb5840bdd788350acfe79b0afc2d3a77aad"
+    },
+    {
+      "path": "dist/assets/optimized/anon.webp",
+      "bytes": 112162,
+      "sha256": "fae767cc4d3c1fcadefc7ec0be3f8945c22e30fc0ca8bc2715bd6d1b217f9fea"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-display-upgraded-small.webp",
+      "bytes": 117742,
+      "sha256": "0ab8225245529aa0103d4702a6d46fc7ab856afeb10b1774cbfbf69baa1cbf2b"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-display-upgraded.webp",
+      "bytes": 194052,
+      "sha256": "82b96520b30f110d04c992586234da3bac3977deecdee4c942b168b2181817d6"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-display-v52-small.webp",
+      "bytes": 84490,
+      "sha256": "c8494bd905928c6be39954112b1b63d60c602234bdcfad4773b9dc54aa3b574c"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-display-v52.webp",
+      "bytes": 140520,
+      "sha256": "c78e207ce9023801f982c8cdceb979f86e1ac30eda42febb2f2c17c27d10632c"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-small.webp",
+      "bytes": 119640,
+      "sha256": "63e8ddc938a31c97cdc68b7e783155048ef83b46de579c6b9bf79616336d06ff"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-v52-small.webp",
+      "bytes": 82780,
+      "sha256": "63ed5dc48ccac665ba58746526c881e738ef0b5513ad7351435c10cc474373bc"
+    },
+    {
+      "path": "dist/assets/optimized/cafe-v52.webp",
+      "bytes": 137278,
+      "sha256": "20ecef5e70c6722a6270d9bf40deefcc47630a9517f5d01065eb22f89175f636"
+    },
+    {
+      "path": "dist/assets/optimized/cafe.webp",
+      "bytes": 205858,
+      "sha256": "c5a164a67d61a98dbdd8d4040d0df1c1de1e48a28e75c2a41df4c9a2558b53ba"
+    },
+    {
+      "path": "dist/assets/optimized/casual/anon.webp",
+      "bytes": 317472,
+      "sha256": "7bce8ead7c73256f0096be49e13c93b4280320ac2b3e7f5f9e635800b7b2c60f"
+    },
+    {
+      "path": "dist/assets/optimized/casual/emotes.webp",
+      "bytes": 104804,
+      "sha256": "fc354f5d39e66c0938826da07f0e2e7402308f74e937f7ab9cbe0d0bd792d056"
+    },
+    {
+      "path": "dist/assets/optimized/casual/rana.webp",
+      "bytes": 173512,
+      "sha256": "76e720feab9fd77f9351552a847aad5f445d31f97ec6c6c8ddbc0f8d6622c779"
+    },
+    {
+      "path": "dist/assets/optimized/casual/soyo.webp",
+      "bytes": 324144,
+      "sha256": "6727df2c9b5125c3ec7c72ed2407232d9e0dad23aa68a1f943623bff3cbdcbfe"
+    },
+    {
+      "path": "dist/assets/optimized/casual/taki.webp",
+      "bytes": 209508,
+      "sha256": "d3aade1600130171dc3e128631b1aa139fd6afa95c8f27e3d2079f1af9a6bea0"
+    },
+    {
+      "path": "dist/assets/optimized/casual/tomori.webp",
+      "bytes": 179994,
+      "sha256": "b5c09a702840541c6ed6cc5d4e5dce08b817894185c03e4dca950aa99cf5f3bf"
+    },
+    {
+      "path": "dist/assets/optimized/furniture-v51.webp",
+      "bytes": 145572,
+      "sha256": "f09f19d34dc73f130803bf964c722f6c1e69afb4665b5eb10ec08d061f9f412c"
+    },
+    {
+      "path": "dist/assets/optimized/furniture-v52.webp",
+      "bytes": 91486,
+      "sha256": "b91deefc6e2b341e8ca1a2804d2fc512c49ad44a7a7f494dcf5d63dbc0d75488"
+    },
+    {
+      "path": "dist/assets/optimized/haru-vn.webp",
+      "bytes": 75688,
+      "sha256": "f69c86a0038ef97cc76dc7d1a52d7f5929b756f5706f869aa7ff95b5f428015e"
+    },
+    {
+      "path": "dist/assets/optimized/jun-vn.webp",
+      "bytes": 71296,
+      "sha256": "37b82dc7084ff2ea390bed01cd4f0f23b31414501d9c3f5b88474bf911e0dd8b"
+    },
+    {
+      "path": "dist/assets/optimized/mei-vn.webp",
+      "bytes": 71794,
+      "sha256": "d275023eb9b013b2f22b73436c99615075115d4fbff388c9d44f17e21a3684e9"
+    },
+    {
+      "path": "dist/assets/optimized/menu-atlas.webp",
+      "bytes": 70240,
+      "sha256": "ac5ee53db12a8a06f9916cd993dee80d98ef26e6774e107eab82ead761b2d665"
+    },
+    {
+      "path": "dist/assets/optimized/mutsumi.webp",
+      "bytes": 60956,
+      "sha256": "58c9911933effd660b2e2ea7bf989108fc312af321eb7e35e5373193b05b4475"
+    },
+    {
+      "path": "dist/assets/optimized/nyamu.webp",
+      "bytes": 31874,
+      "sha256": "236223921ee8fd947d257aa894e43f82480891ca2dbeaad7e168590fcc211520"
+    },
+    {
+      "path": "dist/assets/optimized/pico-guests-v52.webp",
+      "bytes": 112532,
+      "sha256": "3725b3239e2f13373c40248a7f6c3144cdb13b7d41b1b997aabdc2e60903ac89"
+    },
+    {
+      "path": "dist/assets/optimized/pico-taki-v52.webp",
+      "bytes": 87516,
+      "sha256": "e8efacaad81f629132d07a6898dedc924ca1fea24498f8046e9f140dce80f4bd"
+    },
+    {
+      "path": "dist/assets/optimized/rana-curious.webp",
+      "bytes": 76932,
+      "sha256": "2de29c4cf29e17948048a918df308c685d9facbf8cb2ed73ead2e8fe296cdec7"
+    },
+    {
+      "path": "dist/assets/optimized/rana.webp",
+      "bytes": 79778,
+      "sha256": "c03d88c8ffd4477e6d2e9a64dda149e89f6eee351c83e76e0d5cac9c0a141f9a"
+    },
+    {
+      "path": "dist/assets/optimized/sakiko.webp",
+      "bytes": 51302,
+      "sha256": "d8932f0ad49a4eeaaac77601e9209d43ff7b6722ba01b4b08907314e8b52dd82"
+    },
+    {
+      "path": "dist/assets/optimized/soyo-worried.webp",
+      "bytes": 114078,
+      "sha256": "9ea7424dcaa4ea75627b47663559e846b1eece2d96c6b13a4a32c3f6d57abc98"
+    },
+    {
+      "path": "dist/assets/optimized/soyo.webp",
+      "bytes": 112732,
+      "sha256": "6153897dd2f92c8dbf90ac62c36ae23ccd0dfe4219fd227e8376f532677553ec"
+    },
+    {
+      "path": "dist/assets/optimized/taki-chibi.webp",
+      "bytes": 69872,
+      "sha256": "305795da26992e69b2d905b19c1722ee68aa05ac4286943c1df3348186968a04"
+    },
+    {
+      "path": "dist/assets/optimized/taki-reference.webp",
+      "bytes": 6654,
+      "sha256": "b67b7a09d8fdf44e99084bf0df6c69e8195a3f5b4d3e78148b7a12930ccb2174"
+    },
+    {
+      "path": "dist/assets/optimized/taki-worried.webp",
+      "bytes": 78094,
+      "sha256": "b93f04fb89bb6add7f5687f0d2e96995364909a9215e47d332007a537e20bbcb"
+    },
+    {
+      "path": "dist/assets/optimized/taki.webp",
+      "bytes": 79020,
+      "sha256": "de0fc5163784a1328455d844a7746227f6692c91f7b2b923a2fff215558669f1"
+    },
+    {
+      "path": "dist/assets/optimized/title-screen-small.webp",
+      "bytes": 96276,
+      "sha256": "2e1f6f9c762335fbd8762cf7798d1211583147d310df768fda847dff03f12cb5"
+    },
+    {
+      "path": "dist/assets/optimized/title-screen.webp",
+      "bytes": 160548,
+      "sha256": "644d9f577b5734b3de53fb4872feb21737b8ffb20edc3800038457751ea1132a"
+    },
+    {
+      "path": "dist/assets/optimized/tomori-smile.webp",
+      "bytes": 55078,
+      "sha256": "da68422e2db24ad6c448c9c3c19b29ac30988beabf10f1ce9bce9e9a3736065d"
+    },
+    {
+      "path": "dist/assets/optimized/tomori.webp",
+      "bytes": 54698,
+      "sha256": "fb34e4d64acce53fecad4c3d3a63b28687d9c4275c59020c2bf4ed99c4f26990"
+    },
+    {
+      "path": "dist/assets/optimized/uika.webp",
+      "bytes": 49478,
+      "sha256": "56a1151b9f8abb42d747b84e16e176f02bbdabcb4c15e0f7994a7970e03741a9"
+    },
+    {
+      "path": "dist/assets/optimized/umiri.webp",
+      "bytes": 79470,
+      "sha256": "4aad81e014cf757bb8359fffdc7df104e773ea8ece8eb21d6ba278d477a490b3"
+    },
+    {
+      "path": "dist/assets/optimized/visitor-mei.webp",
+      "bytes": 70686,
+      "sha256": "e7de4116859bc4739f000d45162c28fb1d858cde624da71791da5092062d9e9a"
+    },
+    {
+      "path": "dist/assets/optimized/visitor-rust.webp",
+      "bytes": 62834,
+      "sha256": "0145ed9572783127c10de6c1f721d0b3d967c92d6391eb3dbf44adcbf7388a24"
+    },
+    {
+      "path": "dist/assets/optimized/visitor-teal.webp",
+      "bytes": 65198,
+      "sha256": "2271dcdaf39cd641a6059ec8d848b4c709dcb74b94199f7986bbba917f228efc"
+    },
+    {
+      "path": "dist/assets/optimized/vn-rehearsal-small.webp",
+      "bytes": 92128,
+      "sha256": "23ef461f47b1ca3f3c348908fb6ea1f3bdeb70e1613aeb20f0bcace623387c9a"
+    },
+    {
+      "path": "dist/assets/optimized/vn-rehearsal.webp",
+      "bytes": 163276,
+      "sha256": "282d1aa7b1a61b219f57d3acbb89671342fae73974ce7f89dfae33080d938826"
+    },
+    {
+      "path": "dist/assets/optimized/vn-stage-small.webp",
+      "bytes": 94680,
+      "sha256": "32f0dcd026790d4e28a72677d074840793b537ccedccacf57071d93271378b05"
+    },
+    {
+      "path": "dist/assets/optimized/vn-stage.webp",
+      "bytes": 159808,
+      "sha256": "00cf4b517f95aa125ed7699fa654595d9e15d143de1675dc2ddd1b975df2cd6c"
+    },
+    {
+      "path": "dist/assets/pico-guests-v52.png",
+      "bytes": 1215293,
+      "sha256": "ef410a30111ffb1b3c8ec4b7c0b85cf39b0a3dd2257054cdc9062761c3621658"
+    },
+    {
+      "path": "dist/assets/pico-taki-v52.png",
+      "bytes": 1565426,
+      "sha256": "ae3d526ed8909f13fdc5aa05d8b790769949d2bdb7d01b7e71b9b5e44ba5f8df"
+    },
+    {
+      "path": "dist/assets/rana-curious.png",
+      "bytes": 812150,
+      "sha256": "a1ca03bd0cf6cd5e0262a48d2f03e76bec0a5280114370177243dbe8a377728c"
+    },
+    {
+      "path": "dist/assets/rana.png",
+      "bytes": 832733,
+      "sha256": "01739045c3869951cd7bfce54cd0a39240bc062ca4b4d556cdfcd82ae1551d2f"
+    },
+    {
+      "path": "dist/assets/sakiko.png",
+      "bytes": 687823,
+      "sha256": "28b95a0d07c085d907783b5fc2b1b91f5f90b0773a8ad41f8b02362d32d7f6ad"
+    },
+    {
+      "path": "dist/assets/soyo-worried.png",
+      "bytes": 1130347,
+      "sha256": "a37c0c15236eb07e5a7fd9a01c4ef2b903835da34a8bfd7c63b58ed43b44e79d"
+    },
+    {
+      "path": "dist/assets/soyo.png",
+      "bytes": 1169933,
+      "sha256": "19ea6b6f1accf37b7032c67b3a97edf43603347b962347decf5d3df75c70df8b"
+    },
+    {
+      "path": "dist/assets/taki-chibi.png",
+      "bytes": 1513392,
+      "sha256": "3d09fb7c5f1c81c91fe4a2c271702b1c87d7f8c229a03e5e630576ec3c317e24"
+    },
+    {
+      "path": "dist/assets/taki-reference.png",
+      "bytes": 50828,
+      "sha256": "9b7c2646d433f16399dea3ca9a5588a169be052f636802a1a78411aea4b1abd6"
+    },
+    {
+      "path": "dist/assets/taki-worried.png",
+      "bytes": 909548,
+      "sha256": "0198d610585ae6056e745439accc8dca27dc5bee5aca3188f8a3e1c431df322f"
+    },
+    {
+      "path": "dist/assets/taki.png",
+      "bytes": 935275,
+      "sha256": "8c87a846d7a0dfd4d4b398c98adb5692471dc9937d4fb539281172d729cac55d"
+    },
+    {
+      "path": "dist/assets/title-inst.mp3",
+      "bytes": 8429011,
+      "sha256": "601c188fe9b67449284d1ff44ff79b8c6ecb118a4e39c03ef09d2ee44feb3af0"
+    },
+    {
+      "path": "dist/assets/title-screen.png",
+      "bytes": 2183611,
+      "sha256": "d95ec12820fa50252d5bda88198dab045a6af0f67171718f23e31e228ecc1075"
+    },
+    {
+      "path": "dist/assets/tomori-smile.png",
+      "bytes": 1366547,
+      "sha256": "b96cfbfe2998853696a91591d1e4dea1be853b4da605ed44f23c2e5c9f84baa4"
+    },
+    {
+      "path": "dist/assets/tomori.png",
+      "bytes": 1378610,
+      "sha256": "99bf480560ced09dbdfd550f4a0c772fa98a2584ac9af36e52bc8be3b8bc55ab"
+    },
+    {
+      "path": "dist/assets/uika.png",
+      "bytes": 1349506,
+      "sha256": "d36ff6acec0b6a5e6a03de35775e7dcedb0f25e413170f14476a7d0a9dad6fd9"
+    },
+    {
+      "path": "dist/assets/umiri.png",
+      "bytes": 769869,
+      "sha256": "692f851610e005f885701b795fcd90246128d46b834525cede88be82c649b572"
+    },
+    {
+      "path": "dist/assets/visitor-mei.png",
+      "bytes": 1680053,
+      "sha256": "c047c07c9250d22f476f72db997a809dd69658aec668c9e8a1253ca21074831b"
+    },
+    {
+      "path": "dist/assets/visitor-rust.png",
+      "bytes": 1583402,
+      "sha256": "8ef98686d416030004d9fe23fef916d8e1b99740d6d11cd114216a3bce3989b4"
+    },
+    {
+      "path": "dist/assets/visitor-teal.png",
+      "bytes": 1656943,
+      "sha256": "3a06dac4ab7a833d804a24b2d30bf4e9da8f56979d94462ffdf8fa0fc12c82f9"
+    },
+    {
+      "path": "dist/assets/vn-rehearsal.png",
+      "bytes": 2238425,
+      "sha256": "f2d74bdfe24dc92b836fc208e503da546b8366a5aab2fe02397c25c700d45266"
+    },
+    {
+      "path": "dist/assets/vn-stage.png",
+      "bytes": 2112940,
+      "sha256": "ff626c1b037c736295a6349231e8a8fad509771c0d7c1a9abab1c20ea5f14edd"
+    },
+    {
+      "path": "dist/assets/window-mask-v51.svg",
+      "bytes": 148,
+      "sha256": "9f57f033804638784014f131e7fb29dcaa65ad9a39a7964e4bf4ce905312b4ec"
+    },
+    {
+      "path": "dist/assets/window-mask-v52.svg",
+      "bytes": 150,
+      "sha256": "b2c9e427b63765a15e89be026ae7aafd7aa33df0db50b8c17ac06249f1705660"
+    },
+    {
+      "path": "dist/game.026dee2a0a8f.js",
+      "bytes": 634792,
+      "sha256": "026dee2a0a8f887cbed6140a826ae7474f4b7060c5f5db129b06d65123ac9e5e"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 6762,
+      "sha256": "66127018de07450ffd498c8f30dedf1b5c007410b126f7e2f9a67d43dd5b9be2"
+    },
+    {
+      "path": "dist/styles.4aa2c4988429.css",
+      "bytes": 154530,
+      "sha256": "4aa2c498842979eeee16b217c2329d6039b1073fe9fb492a8c971a0e2df70c76"
+    },
+    {
+      "path": "dist/build-manifest.json",
+      "bytes": 17461,
+      "sha256": "2e4ad449288638690e5f0323f6c1b14e8893d4845c3992c3a717b02e13decf6d"
+    },
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 106,
+      "sha256": "401198a0d5593a8f6461f9a31a03f5c799256a05862d1cd768af6490acaaf918"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 'use strict';
-window.RingBuild={"version":53,"id":"v53-98c5dbdaa7501dce"};
+window.RingBuild={"version":54,"id":"v54-95514ec9765f816e"};
 'use strict';
 document.querySelector('#cafeMusicSettings')?.addEventListener('click',()=>window.RingTitle?.open('settings'));
 
@@ -10356,6 +10356,8 @@ window.RingWeek = (() => {
   const profiles = { general: '일반', window: '창가', fan: '공연 팬' };
   const reasons = { stock: '재료 부족', wait: '대기 시간 초과', full: '만석', price: '가격 이탈', closing: '마감', menu: '판매 메뉴 없음', sold: '서빙' };
   const menuIds = Object.keys(balance.menu);
+  const menuNames = {coffee:'블렌드 커피', latte:'카페 라테', cake:'오늘의 케이크', matcha:'말차 라테', liveSet:'공연 세트'};
+  const ingredientNames = {beans:'원두', milk:'우유', cake:'케이크', matcha:'말차'};
   const regularNames = { haru:'하루', mei:'메이', jun:'준' };
   const regularLines = {
     haru:{first:'안녕하세요. 오늘은 천천히 쉬었다 갈게요.',back:'지난번처럼 잠깐 쉬어 가도 되죠?',favorite:['이 향 때문에 다시 왔어요.','역시 한 모금 마시면 정신이 들어요.']},
@@ -10368,6 +10370,99 @@ window.RingWeek = (() => {
   const object = x => x && typeof x === 'object' && !Array.isArray(x);
   const validPlacement = (slot, id) => Object.hasOwn(slots, slot) && Object.hasOwn(items, id) && (items[id].slot === slot || id === 'poster' && slot === 'stage');
   const validAlias = value => typeof value === 'string' && Array.from(value).length <= 14;
+
+  function dayPlan(state) {
+    const plan = state.week.servicePlan;
+    return plan?.day === state.day ? plan : null;
+  }
+
+  function ensurePlan(state) {
+    return dayPlan(state) || (state.week.servicePlan = {day:state.day});
+  }
+
+  function morningSeen(state, id) {
+    return state.week.morning?.day === state.day && state.week.morning.id === id &&
+      state.week.morning.status === 'completed';
+  }
+
+  function planChoice(state, kind, value) {
+    if (state.phase !== 'prep') return false;
+    if (kind === 'live' && live(state.day) && ['off','shared','reserve'].includes(value)) {
+      ensurePlan(state).live = value;
+      state.enabled.liveSet = value !== 'off';
+      return true;
+    }
+    if (kind === 'window' && state.day === 2 && morningSeen(state,'morning_window') && typeof value === 'boolean') {
+      ensurePlan(state).window = value;
+      return true;
+    }
+    if (kind === 'board' && state.day === 4 && morningSeen(state,'morning_board') &&
+        (value === null || menuIds.includes(value) && value !== 'liveSet' && available(state,value) && enough(state,value))) {
+      ensurePlan(state).board = value;
+      return true;
+    }
+    return false;
+  }
+
+  function validPlan(state, week) {
+    const plan = week.servicePlan;
+    const step = week.nextPrep;
+    if (step !== undefined && (!object(step) || ![state.day,state.day+1].includes(step.day) ||
+      !(step.kind === 'stock' && Object.hasOwn(ingredientNames,step.id) ||
+        step.kind === 'menu' && menuIds.includes(step.id) ||
+        step.kind === 'work' && step.id === 'priority'))) return false;
+    if (plan === undefined) return true;
+    if (!object(plan) || plan.day !== state.day ||
+        plan.live !== undefined && !['off','shared','reserve'].includes(plan.live) ||
+        plan.window !== undefined && typeof plan.window !== 'boolean' ||
+        plan.board != null && (!menuIds.includes(plan.board) || plan.board === 'liveSet')) return false;
+    const shift = week.shift;
+    for (const key of ['priority','regular','lamp','machine']) {
+      if (plan[key] != null && (!count(plan[key]) || plan[key] === 0 || plan[key] >= state.nextId)) return false;
+    }
+    if (plan.priority != null && !state.customers.some(c=>c.id===plan.priority && ['waiting','ready'].includes(c.status))) return false;
+    if (plan.boardUsed !== undefined && (!count(plan.boardUsed) || plan.boardUsed>2)) return false;
+    if (plan.allocation === undefined) return true;
+    const a = plan.allocation;
+    return !!shift && object(a) && ['held','initial','released','used'].every(k=>count(a[k]) && a[k]<=2) &&
+      a.initial === a.held+a.released+a.used &&
+      Object.entries(balance.menu.liveSet.recipe).every(([id,n])=>a.held*n<=state.stock[id]);
+  }
+
+  function reservePreview(state) {
+    const spec = balance.menu.liveSet.recipe;
+    const target = dayPlan(state)?.live === 'reserve' && state.enabled.liveSet ? 2 : 0;
+    const units = Math.min(target,...Object.entries(spec).map(([id,n])=>Math.floor(state.stock[id]/n)));
+    return {target,units,missing:Object.entries(spec).filter(([id,n])=>state.stock[id]<n*target)
+      .map(([id,n])=>ingredientNames[id]+' '+(n*target-state.stock[id])+'개 부족')};
+  }
+
+  function usable(state, ingredient, menu) {
+    const held = menu === 'liveSet' ? 0 : dayPlan(state)?.allocation?.held || 0;
+    return state.stock[ingredient] - held*(balance.menu.liveSet.recipe[ingredient] || 0);
+  }
+
+  function releaseReserve(state, force = false) {
+    const a = dayPlan(state)?.allocation;
+    if (!a?.held || (!force && livePhase(state) === 'before')) return;
+    const pending = force ? 0 : state.customers.filter(c=>c.status==='waiting' && c.menu==='liveSet').length;
+    const returned = Math.max(0,a.held-pending);
+    a.held -= returned;
+    a.released += returned;
+  }
+
+  function firstWork(state,id) {
+    const guest = state.customers.find(c=>c.id===id);
+    const plan = dayPlan(state);
+    if (state.phase!=='open' || plan?.regular!==id || !['waiting','ready'].includes(guest?.status)) return false;
+    plan.priority=id;
+    return true;
+  }
+
+  function advancePlan(state) {
+    delete state.week.servicePlan;
+    if (state.week.nextPrep?.day !== state.day) delete state.week.nextPrep;
+  }
 
   function init(state, fresh = false, seed = Date.now() >>> 0) {
     if (state.week) return state.week;
@@ -10422,7 +10517,11 @@ window.RingWeek = (() => {
     }
     if (week.guestMemory !== undefined && (!object(week.guestMemory) || Object.entries(week.guestMemory).some(([id,m])=>
       !Object.hasOwn(regularNames,id) || !object(m) || !count(m.visits) || !count(m.lastDay) || m.lastDay>state.day ||
+      (m.lastOrderId!==undefined&&(!count(m.lastOrderId)||m.lastOrderId>=state.nextId)) ||
+      (m.lastReferencedDay!==undefined&&(!count(m.lastReferencedDay)||m.lastReferencedDay>state.day)) ||
+      (m.lastServedDay!==undefined&&(!count(m.lastServedDay)||m.lastServedDay>m.lastDay)) ||
       (m.lastMenu!==null&&!menuIds.includes(m.lastMenu)) || (m.lastServed!==null&&!menuIds.includes(m.lastServed)) || !Object.hasOwn(reasons,m.lastResult)))) return false;
+    if (!validPlan(state,week)) return false;
     if (week.shift === null) return state.phase !== 'open';
     const shift = week.shift;
     return object(shift) && shift.day === state.day && count(shift.seconds) && shift.seconds >= 65 && shift.seconds <= 75 &&
@@ -10453,7 +10552,8 @@ window.RingWeek = (() => {
   }
 
   function available(state, id, day = state.day) {
-    return state.enabled[id] && (id !== 'liveSet' || live(day) && (day !== state.day || (state.week.shift?.sets || 0) < setLimit(day)));
+    return state.enabled[id] && (id !== 'liveSet' || live(day) && (day !== state.day ||
+      (state.week.shift?.sets || 0) < setLimit(day) && (!dayPlan(state)?.allocation || livePhase(state)==='before')));
   }
 
   function setLimit(day) {
@@ -10506,15 +10606,28 @@ window.RingWeek = (() => {
   }
 
   function enough(state, id) {
-    return Object.entries(balance.menu[id].recipe).every(([k, n]) => state.stock[k] >= n);
+    return Object.entries(balance.menu[id].recipe).every(([k, n]) => usable(state,k,id) >= n);
   }
 
   function stat(state, id) {
-    return state.menuHistory.today[id] ||= { offered: 0, sold: 0, priceRejected: 0 };
+    return state.menuHistory.today[id] ||= { offered: 0, sold: 0, priceRejected: 0, accepted: 0 };
   }
 
   const text=(id,params)=>window.RingNarrative.get(id,params);
-  function guestGreeting(state,guest){const who=regularNames[guest.regularId]?guest.regularId:'general',memory=state.week.guestMemory?.[who];if(who==='general')return text('guest.general.'+(guest.takeout?'takeout':'here'));return text('guest.'+who+'.'+(!memory?.visits?'first':['wait','stock'].includes(memory.lastResult)?'missed':memory.lastServed&&memory.lastServed===guest.menu?'same':'back'));}
+  function guestGreeting(state,guest){
+    const who=regularNames[guest.regularId]?guest.regularId:'general';
+    if (who!=='general' && menuIds.includes(guest.remembers)) {
+      const menu=menuNames[guest.remembers];
+      return guest.menu===guest.remembers ? {
+        haru:'지난번 '+menu+', 오늘도 한 잔 부탁해요.',
+        mei:'저번에 먹은 '+menu+'가 생각나서 왔어요.',
+        jun:'지난번 '+menu+', 오늘도 될까요?'
+      }[who] : '지난번엔 '+menu+'였죠. 오늘은 이걸로 할게요.';
+    }
+    const memory=state.week.guestMemory?.[who];
+    if(who==='general')return text('guest.general.'+(guest.takeout?'takeout':'here'));
+    return text('guest.'+who+'.'+(!memory?.visits?'first':['wait','stock'].includes(memory.lastResult)?'missed':memory.lastServed&&memory.lastServed===guest.menu?'same':'back'));
+  }
 
   function terminal(state, guest, reason) {
     const shift = state.week.shift;
@@ -10548,10 +10661,17 @@ window.RingWeek = (() => {
     if (Object.hasOwn(regularNames,guest.regularId)) {
       state.week.guestMemory ||= {};
       state.week.guestMemory[guest.regularId] = {visits:(previous?.visits||0)+1,lastDay:state.day,lastMenu:guest.menu||null,
-        lastServed:reason==='sold'?guest.menu:previous?.lastServed??null,lastResult:reason};
+        lastServed:reason==='sold'?guest.menu:previous?.lastServed??null,lastResult:reason,lastOrderId:guest.id,
+        ...(reason==='sold'||previous?.lastServed?{lastServedDay:reason==='sold'?state.day:previous.lastServedDay??previous.lastDay}:{}),
+        ...(previous?.lastReferencedDay!==undefined?{lastReferencedDay:previous.lastReferencedDay}:{})};
     }
-    shift.ledger.push({ id: guest.id, menu: guest.menu || null, reason, profile: guest.profile || 'general',
-      takeout: !!guest.takeout, ...(moments.length?{moments}:{}), ...(guest.regularId?{regularId:guest.regularId}:{}), reaction, revenue: reason === 'sold' ? guest.price : 0, cost: guest.materialCost || 0 });
+    shift.ledger.push({ id: guest.id, menu: guest.menu || null, reason, at:state.tick, profile: guest.profile || 'general',
+      takeout: !!guest.takeout, ...(moments.length?{moments}:{}), ...(guest.regularId?{regularId:guest.regularId}:{}),
+      ...(guest.menu?{quotedPrice:guest.price??state.prices[guest.menu]}:{}),
+      ...(guest.status&&guest.menu==='liveSet'?{accepted:true}:{}),
+      ...(guest.setReplaced?{setReplaced:true}:{}),
+      ...(count(guest.seat)?{seat:guest.seat}:{}),
+      reaction, revenue: reason === 'sold' ? guest.price : 0, cost: guest.materialCost || 0 });
     if (reason === 'sold') {
       state.money += guest.price;
       state.revenue += guest.price;
@@ -10567,7 +10687,7 @@ window.RingWeek = (() => {
         state.failures.stockWait++;
         state.failures.missing ||= {};
         if (guest.menu) for (const [key,n] of Object.entries(balance.menu[guest.menu].recipe)) {
-          if (state.stock[key] < n) state.failures.missing[key] = (state.failures.missing[key] || 0) + 1;
+          if (usable(state,key,guest.menu) < n) state.failures.missing[key] = (state.failures.missing[key] || 0) + 1;
         }
       }
       if (reason === 'wait' || reason === 'closing') state.failures.wait++;
@@ -10579,6 +10699,9 @@ window.RingWeek = (() => {
     if (state.workers.taki?.id === guest.id) state.workers.taki = null;
     if (state.week.nextJob?.id === guest.id) state.week.nextJob = null;
     if (state.week.milkOrder === guest.id) state.week.milkOrder = null;
+    const plan = dayPlan(state);
+    if (plan?.priority===guest.id) delete plan.priority;
+    releaseReserve(state);
     return true;
   }
 
@@ -10590,11 +10713,18 @@ window.RingWeek = (() => {
     state.week.milkOrder = null;
     if (state.day === 6) state.fatigue = Math.max(0, state.fatigue - 8);
     state.week.shift = { day: state.day, seconds: plan.seconds, cursor: 0, arrivals, outside: [], ledger: [], sets: 0, coach: null };
+    const service=ensurePlan(state);
+    if (live(state.day)) {
+      const {units}=reservePreview(state);
+      service.allocation={initial:units,held:units,used:0,released:0};
+    }
     if (first) {
       const id = state.nextId++;
       state.customers.push({ id, menu: 'cake', price: state.prices.cake, seat: 0, profile: 'general',
         status: 'waiting', patience: 26, maxPatience: 26 });
-      stat(state, 'cake').offered++;
+      const tutorial=stat(state,'cake');
+      tutorial.offered++;
+      tutorial.accepted=(tutorial.accepted||0)+1;
       state.week.shift.coach = id;
     }
   }
@@ -10621,6 +10751,11 @@ window.RingWeek = (() => {
     const spec = balance.menu[guest.menu];
     if (kind === 'make') {
       let cost = 0;
+      const plan = dayPlan(state);
+      if (guest.menu==='liveSet' && plan?.allocation?.held) {
+        plan.allocation.held--;
+        plan.allocation.used++;
+      }
       for (const [key, n] of Object.entries(spec.recipe)) {
         state.stock[key] -= n;
         cost += balance.ingredients[key] * n;
@@ -10633,6 +10768,7 @@ window.RingWeek = (() => {
       }
       const seconds = state.week.shift.coach === id ? 1 :
         makeSeconds(state,guest.menu);
+      if (plan && plan.machine===undefined && spec.station==='espresso' && has(state,'machine')) plan.machine=id;
       state.workers.taki = { id, kind, remaining: seconds };
     } else {
       guest.status = 'serving';
@@ -10640,10 +10776,12 @@ window.RingWeek = (() => {
       state.workers.taki = { id, kind, remaining: seconds };
     }
     if (state.week.nextJob?.id === id && state.week.nextJob.kind === kind) state.week.nextJob = null;
+    const plan = dayPlan(state);
+    if (plan?.priority===id) delete plan.priority;
     return kind;
   }
 
-  function candidates(state, profile, budget, preference, favorite) {
+  function candidates(state, profile, budget, preference, favorite, board) {
     const order = [...balance.profiles[profile].preference];
     if (schedule(state.day).type === 'rain' && profile !== 'fan') order.unshift('matcha');
     if (has(state, 'display') && profile !== 'fan' && preference < .25) {
@@ -10651,7 +10789,10 @@ window.RingWeek = (() => {
       if (i > 0) order.splice(i - 1, 0, ...order.splice(i, 1));
     }
     if (favorite && !(profile === 'fan' && available(state,'liveSet'))) order.unshift(favorite);
-    const choices = [...new Set(order)].filter(id => available(state, id)).slice(0, 2);
+    const ranked = [...new Set(order)].filter(id => available(state, id));
+    const pos = ranked.indexOf(board);
+    if (pos>0) ranked.splice(pos-1,0,...ranked.splice(pos,1));
+    const choices = ranked.slice(0, 2);
     return { choices, pick: choices.find(id => enough(state, id) && state.prices[id] <= Math.round(balance.menu[id].basePrice * budget)) };
   }
 
@@ -10664,14 +10805,20 @@ window.RingWeek = (() => {
   function switchOrder(state, id, expected) {
     const guest = state.customers.find(c => c.id === id);
     if (!guest || !menuIds.includes(expected) || alternate(state, guest) !== expected) return false;
-    if (guest.menu === 'liveSet') state.week.shift.sets--;
+    if (guest.menu === 'liveSet') {
+      state.week.shift.sets--;
+      guest.setReplaced=true;
+    }
     if (expected === 'liveSet') state.week.shift.sets++;
     guest.menu = expected;
     guest.price = state.prices[expected];
     guest.switched = true;
     stat(state,expected).offered++;
+    const stats=stat(state,expected);
+    stats.accepted=(stats.accepted||0)+1;
     if (state.week.nextJob?.id === id) state.week.nextJob = null;
     if (state.week.milkOrder === id) state.week.milkOrder = null;
+    releaseReserve(state);
     return true;
   }
 
@@ -10692,7 +10839,12 @@ window.RingWeek = (() => {
   function enter(state, arrival, seat, regularForId, events) {
     const id = state.nextId++;
     const regular = regularForId(id);
-    const { choices, pick } = candidates(state, arrival.profile, arrival.budget, arrival.preference,regular?.favorite);
+    const service = ensurePlan(state);
+    const board = !regular && arrival.profile!=='fan' && state.tick<state.week.shift.seconds/2 &&
+      (service.boardUsed||0)<2 && service.board && available(state,service.board) && enough(state,service.board)
+      ? service.board : null;
+    if (board) service.boardUsed=(service.boardUsed||0)+1;
+    const { choices, pick } = candidates(state, arrival.profile, arrival.budget, arrival.preference,regular?.favorite,board);
     if (!pick) {
       const price = choices.find(menu => enough(state, menu));
       const reason = price ? 'price' : choices.length ? 'stock' : 'menu';
@@ -10704,10 +10856,24 @@ window.RingWeek = (() => {
     }
     if (pick === 'liveSet') state.week.shift.sets++;
     stat(state,pick).offered++;
+    const stats=stat(state,pick);
+    stats.accepted=(stats.accepted||0)+1;
     const patience = balance.profiles[arrival.profile].patience +
       (arrival.profile === 'window' && has(state, 'windowLamp') ? 3 : 0) +
       (regular ? Math.min(4, state.regulars[regular.id] || 0) : 0) + (state.nextPerk === 'patient' ? 4 : 0);
+    const lamp = arrival.profile==='window' && has(state,'windowLamp');
+    if (lamp && service.lamp===undefined) service.lamp=id;
+    let remembers;
+    if (regular && service.regular===undefined) {
+      service.regular=id;
+      const memory=state.week.guestMemory?.[regular.id];
+      if (memory?.lastServed && (memory.lastServedDay??memory.lastDay)<state.day && memory.lastReferencedDay!==state.day) {
+        remembers=memory.lastServed;
+        memory.lastReferencedDay=state.day;
+      }
+    }
     state.customers.push({ id, menu: pick, price: state.prices[pick], seat, profile: arrival.profile, budget: arrival.budget,
+      ...(remembers?{remembers}:{}),
       takeout: arrival.takeout, regularId: regular?.id || null, regularName: regular?.name || null, favorite:regular?.favorite||null,
       status: 'waiting', patience, maxPatience: patience });
     events.push('door');
@@ -10724,6 +10890,12 @@ window.RingWeek = (() => {
     const ready = state.customers.filter(c => c.status === 'ready').sort((a, b) => a.patience - b.patience)[0];
     const waiting = state.customers.find(c => c.status === 'waiting' && enough(state, c.menu));
     const autoPickup = state.priority === 'pickup' && state.day >= 3;
+    const priority=dayPlan(state)?.priority;
+    const preferred=state.customers.find(c=>c.id===priority);
+    if (preferred && (autoPickup || ['make','serve'].includes(state.priority))) {
+      if (preferred.status==='ready') return command(state,priority,'serve');
+      if (!pickupFull(state) && !state.week.milkOrder && !ready && !autoPickup && enough(state,preferred.menu)) return command(state,priority,'make');
+    }
     if (ready && (autoPickup || state.priority === 'serve' || state.priority === 'make' &&
         (!waiting || ready.patience <= 6 || state.customers.filter(c => c.status === 'ready').length >= capacity(state)))) {
       return command(state, ready.id, 'serve');
@@ -10736,7 +10908,10 @@ window.RingWeek = (() => {
     const shift = state.week.shift, events = [];
     const coach = shift.coach !== null;
     const worker = state.workers.taki;
+    const stage=livePhase(state);
     if (!coach) state.tick++;
+    if (stage==='before' && livePhase(state)==='during') events.push('choice');
+    releaseReserve(state);
     if (worker && --worker.remaining <= 0) {
       const guest = state.customers.find(c => c.id === worker.id);
       state.workers.taki = null;
@@ -10780,6 +10955,7 @@ window.RingWeek = (() => {
       }
     }
     const close = state.tick >= shift.seconds && !state.customers.length && !state.workers.taki;
+    if (close) releaseReserve(state,true);
     if (!close) {
       const next = startNext(state);
       if (next === 'make' || next === 'serve') events.push(next);
@@ -10790,7 +10966,8 @@ window.RingWeek = (() => {
   function recommendation(state, day = state.day) {
     const plan = schedule(day);
     const availableMenus = menuIds.filter(id => state.enabled[id] && (id !== 'liveSet' || live(day)));
-    const low = { beans: 0, milk: 0, cake: 0, matcha: 0 }, high = { ...low }, target = { ...low };
+    const low = { beans: 0, milk: 0, cake: 0, matcha: 0 }, high = { ...low }, target = { ...low }, general = { ...low };
+    const reserve=day===state.day?reservePreview(state).target:0;
     const weight = Object.fromEntries(availableMenus.map(id => [id, 0]));
     for (const [i, profile] of Object.keys(profiles).entries()) {
       const order=plan.type==='rain'&&profile!=='fan'?['matcha',...balance.profiles[profile].preference]:balance.profiles[profile].preference;
@@ -10802,15 +10979,16 @@ window.RingWeek = (() => {
       const previous = state.week.yesterday?.[id];
       const estimate = plan.visits * weight[id] / total;
       let n = Math.max(0, Math.round(previous ? (estimate * 2 + previous.sold + previous.missed) / 3 : estimate));
-      if (id === 'liveSet') n = Math.min(n, setLimit(day));
+      if (id === 'liveSet') n = Math.min(Math.max(reserve,n), setLimit(day));
       for (const [ingredient, amount] of Object.entries(balance.menu[id].recipe)) {
         low[ingredient] += Math.max(0, n - 1) * amount;
         target[ingredient] += n * amount;
+        if (id!=='liveSet') general[ingredient] += n*amount;
         high[ingredient] += (id==='liveSet'?Math.min(setLimit(day),n+1):n+1) * amount;
       }
     }
     const missing = Object.fromEntries(Object.entries(target).map(([id, n]) => [id, Math.max(0, n - state.stock[id])]));
-    return { low, high, missing, cost: basketCost(missing) };
+    return { low, high, missing, cost: basketCost(missing), general, reserve };
   }
 
   function basketCost(basket) {
@@ -10882,6 +11060,7 @@ window.RingWeek = (() => {
   }
 
   function close(state) {
+    releaseReserve(state,true);
     if (!state.week.firstClosed) {
       state.week.photos.push({ day:state.day, alias:state.week.alias, placements:{ ...state.week.placements } });
     }
@@ -10931,13 +11110,61 @@ window.RingWeek = (() => {
   function quietLine(state){if(state.customers.length||state.workers.taki)return '';if(livePhase(state)==='after')return liveAfter(state);if(state.week.guestMemory?.jun?.lastServed==='latte')return '타키: '+text('taki.remember');const sold=Object.entries(state.menuHistory.today).filter(([,x])=>x.sold>0).sort((a,b)=>b[1].sold-a[1].sold)[0];return '타키: '+(sold?text('taki.sales',{menu:({coffee:'커피',latte:'라테',cake:'케이크',matcha:'말차 라테',liveSet:'공연 세트'}[sold[0]]),count:sold[1].sold,unit:/cake|liveSet/.test(sold[0])?'개':'잔'}):text('taki.idle'));}
   function facilityCompare(state,id) {
     if(id==='windowLamp')return '창가 손님 대기 '+balance.profiles.window.patience+' → '+(balance.profiles.window.patience+3)+'초 · 창가 방문 비중 +12%p (상한 적용)';
-    if(id==='machine')return '현재 피로 기준 · 커피 '+makeSeconds(state,'coffee',false)+' → '+makeSeconds(state,'coffee',true)+'초 / 라테 '+makeSeconds(state,'latte',false)+' → '+makeSeconds(state,'latte',true)+'초';
+    if(id==='machine')return '현재 피로 기준 · '+menuIds.filter(menu=>balance.menu[menu].station==='espresso')
+      .map(menu=>menuNames[menu]+' '+makeSeconds(state,menu,false)+' → '+makeSeconds(state,menu,true)+'초').join(' · ');
     return items[id]?.effect||'';
+  }
+
+  function nextAction(state) {
+    const rows=state.week.shift?.ledger || [];
+    const tally=reason=>rows.filter(row=>row.reason===reason).length;
+    if (live(state.day) && state.enabled.liveSet) {
+      const stock=rows.filter(row=>row.menu==='liveSet' && row.reason==='stock').length;
+      if (stock) {
+        const id=Object.keys(balance.menu.liveSet.recipe).find(key=>state.failures.missing[key]) || 'beans';
+        return {kind:'stock',id,label:'공연 세트 재료 부족 '+stock+'건 · '+ingredientNames[id]};
+      }
+    }
+    const [reason,n]=[['stock',tally('stock')],['wait',tally('wait')+tally('closing')],['price',tally('price')]]
+      .sort((a,b)=>b[1]-a[1])[0];
+    if (!n) return null;
+    if (reason==='wait') return {kind:'work',id:'priority',label:'대기 중 놓친 주문 '+n+'건 · 업무 방식 확인'};
+    if (reason==='stock') {
+      const id=Object.keys(ingredientNames).filter(key=>state.failures.missing[key])
+        .sort((a,b)=>state.failures.missing[b]-state.failures.missing[a])[0];
+      return id ? {kind:'stock',id,label:'재료 부족 '+n+'건 · '+ingredientNames[id]} : null;
+    }
+    const counts=id=>rows.filter(row=>row.reason==='price'&&row.menu===id).length;
+    const id=menuIds.slice().sort((a,b)=>counts(b)-counts(a))[0];
+    const price=rows.find(row=>row.menu===id&&row.reason==='price')?.quotedPrice ?? state.prices[id];
+    return {kind:'menu',id,label:menuNames[id]+' · ¥'+price.toLocaleString()+'에 '+counts(id)+'건 이탈'};
+  }
+
+  function dailyLine(state) {
+    const plan=dayPlan(state);
+    if (state.day===2 && morningSeen(state,'morning_window')) return plan?.window
+      ? '타키: 창가 두 의자는 아침 그대로였어. 그림자는 먼저 퇴근했지만.'
+      : '타키: 오늘은 평소처럼 열었어. 토모리가 오면 창가 자리부터 봐야지.';
+    if (plan?.board) return state.menuHistory.today[plan.board]?.sold
+      ? '타키: '+menuNames[plan.board]+' 나갔어. 아논, 별 그림 덕분이라고는 안 했어.'
+      : '타키: '+menuNames[plan.board]+'는 못 건넸네. 내일 칠판은 다시 쓰면 돼.';
+    const regular=state.week.shift?.ledger.find(row=>row.id===plan?.regular);
+    if (regular) return regularNames[regular.regularId]+' · '+regular.reaction;
+    return dayNotes(state)[0] || (live(state.day)?liveAfter(state):'');
+  }
+
+  function previousMenu(state) {
+    const previous=state.menuHistory.yesterday;
+    if (!previous) return null;
+    const ranked=menuIds.filter(id=>previous[id]?.priceRejected||previous[id]?.sold);
+    return ranked.sort((a,b)=>(previous[b].priceRejected||0)-(previous[a].priceRejected||0) ||
+      (previous[b].sold||0)-(previous[a].sold||0))[0] || null;
   }
 
   return { makeSeconds, livePhase, liveAfter, dayNotes, quietLine, facilityCompare, init, valid, balance, stations, slots, items, profiles, reasons, has, schedule, live, available, setLimit,
     open, command, tick, recommendation, buyStock, basketCost, place, undo, unlocked, syncUpgrades, close,
-    enough, alternate, switchOrder, cancel, guestGreeting, regularNames, modeHelp };
+    enough, alternate, switchOrder, cancel, guestGreeting, regularNames, modeHelp,
+    dayPlan, planChoice, morningSeen, reservePreview, usable, firstWork, advancePlan, nextAction, dailyLine, previousMenu };
 })();
 
 ;
@@ -10959,9 +11186,17 @@ window.RingWeekView = (() => {
       const button = event.target.closest('#weekScene button[data-week], #weekEditorHost button[data-week]');
       if (!button || button.disabled) return;
       const action = button.dataset.week, id = button.dataset.id;
-      if (action === 'open') api.open();
+      if (action === 'open') {
+        const state=api.state();
+        if(cart?.state===state&&cart.day===state.day&&rules.basketCost(cart.counts)>0){
+          api.prep('stock');
+          $('#weekOpenFromPrep')?.click();
+        } else api.open();
+      }
       if (action === 'prepare') api.prep('stock');
       if (action === 'prep') api.prep(id);
+      if (action === 'next-prep') api.applyNextPrep();
+      if (action === 'menu-record') api.applyNextPrep({day:api.state().day,kind:'menu',id});
       if (action === 'receipt') api.receipt();
       if (action === 'edit') edit();
       if (action === 'close-editor') {
@@ -11040,6 +11275,7 @@ window.RingWeekView = (() => {
             return control('preview',id,`<strong>${item.name}</strong><span>${price}</span><small>${item.effect}</small>`,'aria-pressed="'+(preview===id)+'"');
           }).join('')}</div>
         <footer>${candidate?`<p class="facility-compare">${esc(rules.facilityCompare(state,preview))}</p>`:''}${candidate?'<small class="growth-preview">'+(owned?'이미 보유 · 배치 무료 · 하루 유지비 '+yen(candidate.upkeep):candidate.cost<=state.money?'구매 후 '+yen(state.money-candidate.cost)+' · 하루 유지비 '+yen(candidate.upkeep):yen(candidate.cost-state.money)+' 부족')+'</small>':''}${control('place','',preview==='base'?'기본으로 돌리기':owned?'배치':'구매·배치',canPlace?'class="primary"':'disabled')}
+          ${candidate?'<small>배치를 누르면 가게에 바로 적용돼요. 새 물건은 이때 결제합니다.</small>':''}
           ${control('undo','','되돌리기',state.week.undo?'':'disabled')}
           <form id="weekAlias"><input name="alias" maxlength="28" aria-label="가게 별칭 14자" value="${esc(state.week.alias)}" placeholder="가게 별칭"><button>저장</button></form>
         </footer>
@@ -11052,15 +11288,24 @@ window.RingWeekView = (() => {
     const shift=state.week.shift;
     const pickup=state.customers.filter(c=>c.status==='ready');
     const queued=state.week.nextJob;
-    const reserved=state.customers.filter(c=>c.menu==='liveSet').length;
+    const pending=state.customers.filter(c=>c.menu==='liveSet').length;
+    const received=pending+shift.ledger.filter(row=>row.accepted||row.setReplaced||row.menu==='liveSet'&&row.reason==='sold').length+
+      state.customers.filter(c=>c.setReplaced).length;
+    const plan=rules.dayPlan?.(state);
+    const remaining=rules.available(state,'liveSet')?rules.setLimit(state.day)-shift.sets:0;
+    const sale=shift.ledger.findLast(row=>row.reason==='sold'&&row.at!==undefined&&state.tick-row.at<4);
+    const seat=sale&&window.RingFloor?.seat(sale.seat??0,state.week.placements);
     const coach=state.customers.find(c=>c.id===shift.coach);
     const spot=pickup.length?pickup.map(c=>control('serve',c.id,`${art(c.menu)}<span>#${c.id} 전달</span>`,
       `aria-label="${menuNames[c.menu]} #${c.id} 픽업 및 전달" class="${coach?.id===c.id?'coach-mark':''}"`)).join(''):'<span>픽업</span>';
     return `${state.week.milkOrder?control("milk",state.week.milkOrder,"우유 연결",'class="floor-pin week-milk coach-mark"'):""}<div class="floor-pin week-pickup ${pickup.length?'has-order':''}" aria-label="픽업 선반">${spot}</div>
+      ${plan?.window&&state.tick<30?'<div class="floor-pin window-reservation">토모리 · 창가 예약</div>':''}
+      ${plan?.board?`<div class="cafe-chalk-line">오늘 추천 · ${menuNames[plan.board]}</div>`:''}
+      ${sale?`<div class="guest-handoff" style="--handoff-x:${seat?.x??20}%;--handoff-y:${(seat?.bottom??4)+28}%">${art(sale.menu)}<span>${menuNames[sale.menu]} · 전달 완료 +${yen(sale.revenue)}<small>${esc(sale.reaction||'')}</small></span></div>`:''}
       <div class="week-scene-status">
         ${state.tick>=shift.seconds?'<b>마지막 주문</b>':''}
         ${shift.outside.length?`<span>입구 대기 ${shift.outside.length}</span>`:''}
-        ${rules.live(state.day)?`<span>옆 무대 · ${waveLabel(state)} · 세트 접수 가능 ${state.enabled.liveSet?Math.max(0,rules.setLimit(state.day)-shift.sets):0} · 접수된 주문 ${reserved}${state.enabled.liveSet?'':' · 판매 안 함'}</span>`:''}
+        ${rules.live(state.day)?`<span>${waveLabel(state)} · 세트 제공 ${state.soldLiveSet}/접수 ${received} · ${!state.enabled.liveSet?'판매 안 함':remaining?'접수 가능 '+remaining:'접수 마감'}${plan?.allocation?.held?' · 재료 확보 '+plan.allocation.held+'인분':''}</span>`:''}
         ${!state.customers.length?`<p class="week-quiet">${esc(rules.quietLine(state))}</p>`:''}
         ${queued?control('cancel-queue','',`#${queued.id} 예약 취소`) :''}
 
@@ -11071,7 +11316,15 @@ window.RingWeekView = (() => {
     const plan=rules.schedule(state.day),weather={sun:'햇살 좋은 날',rain:'비 오는 날',live:'라이브가 있는 날',special:'특별 공연일'}[plan.type];
     const options=Object.keys(rules.balance.menu).filter(id=>state.enabled[id]&&(id!=='liveSet'||rules.live(state.day)));
     const firstMissing=state.week.introService&&!rules.enough(state,'cake'),shortage=firstMissing||!options.some(id=>rules.enough(state,id));
-    return '<div class="cafe-day-intro"><p>DAY '+state.day+' · '+weather+'</p><h2>오늘의 RiNG</h2><span>한 잔씩, 우리 페이스대로.</span>'+(shortage?'<p class="prep-alert">! '+(firstMissing?'첫 주문 케이크의 재료가 부족해요.':'지금 낼 수 있는 메뉴의 재료가 부족해요.')+' '+control('prep','stock','재료 확인')+'</p>':'')+'</div><div class="week-prep-tools">'+control('open','','문 열기','class="primary"')+control('prepare','','준비하기')+'</div>';
+    const previous=rules.previousMenu?.(state);
+    const proposal=state.week.nextPrep?.day===state.day?control('next-prep','','마감에서 고른 항목'):
+      rules.live(state.day)?control('prep','calendar','공연 세트 준비'):
+      state.day===2&&rules.morningSeen?.(state,'morning_window')?control('prep','stock','창가에 예약표 두기'):
+      state.day===2&&previous?control('menu-record',previous,'전일 메뉴 기록 보기'):
+      state.day===4&&rules.morningSeen?.(state,'morning_board')?control('prep','menu','메뉴판 한 줄 채우기'):
+      state.day===4?control('prep','equipment','창가등과 머신 비교'):
+      state.day===5&&plan.type==='rain'&&Object.values(state.week.guestMemory||{}).some(m=>m.lastServed)?control('prep','menu','비 오는 날 단골 메뉴 보기'):'';
+    return '<div class="cafe-day-intro"><p>DAY '+state.day+' · '+weather+'</p><h2>오늘의 RiNG</h2>'+(proposal||'<span>한 잔씩, 우리 페이스대로.</span>')+(shortage?'<p class="prep-alert">! '+(firstMissing?'첫 주문 케이크의 재료가 부족해요.':'지금 낼 수 있는 메뉴의 재료가 부족해요.')+' '+control('prep','stock','재료 확인')+'</p>':'')+'</div><div class="week-prep-tools">'+control('open','','문 열기','class="primary"')+control('prepare','','준비하기')+'</div>';
   }
   function render(state, view) {
     const host = $('#weekScene'), editorHost = $('#weekEditorHost');
@@ -11095,7 +11348,9 @@ window.RingWeekView = (() => {
       editor?state.money:null,editor?state.week.undo:null,editor?state.week.owned:null,state.week.nextJob,
       state.week.shift?.coach,state.week.milkOrder,state.week.shift?.outside.length,state.week.shift?.sets,
       state.week.shift?state.tick>=state.week.shift.seconds:false,state.week.shift?waveLabel(state):'', state.stock.cake>0,
-      state.customers.map(c=>[c.id,c.menu,c.status]),state.workers.taki?.id,state.menuHistory.today,state.week.shift?.ledger.length]);
+      state.customers.map(c=>[c.id,c.menu,c.status]),state.workers.taki?.id,state.menuHistory.today,state.week.shift?.ledger.length,
+      rules.dayPlan?.(state),state.week.morning?.status,state.week.nextPrep,state.tick<30,
+      state.week.shift?.ledger.findLast(row=>row.reason==='sold'&&row.at!==undefined&&state.tick-row.at<4)?.id]);
     if(signature===lastScene)return;
     lastScene=signature;
     const inEditor=editorHost.contains(document.activeElement);
@@ -11115,45 +11370,103 @@ window.RingWeekView = (() => {
     const alternative=rules.alternate(state,c);
     const reserving=!!state.workers.taki || c.status==='waiting'&&state.customers.filter(order=>order.status==='ready').length>=(rules.has(state,'pickupShelf')?2:1);
     const status=queued?(state.week.nextJob.kind==='make'?'제조 예약':'전달 예약'):{waiting:'주문 대기',making:'타키가 제조 중',ready:'픽업 · 전달 필요',serving:'타키가 전달 중'}[c.status];
+    const plan=rules.dayPlan?.(state);
+    const label=[plan?.regular===c.id?'오늘의 단골':'',plan?.lamp===c.id?'창가 · 대기 +3초':'',plan?.machine===c.id&&c.status==='making'?'추출 1초 단축':''].filter(Boolean).join(' · ');
+    const quick=plan?.regular===c.id&&['make','serve','pickup'].includes(state.priority)&&!queued&&
+      (c.status==='ready'||available&&c.status==='waiting'&&state.priority!=='pickup')
+      ?`<button data-first-work="${c.id}" aria-pressed="${plan.priority===c.id}">${plan.priority===c.id?'먼저 처리 예약됨':'먼저 처리'}</button>`:'';
     const base=`<div class="week-ticket-title">${art(c.menu)}<strong>#${c.id} ${menuNames[c.menu]}</strong><small>${yen(c.price)}</small></div>
       <div class="week-ticket-meta"><span>${c.regularName?esc(c.regularName)+' · ':''}${c.takeout?'포장':rules.profiles[c.profile]||'일반'} · ${status}</span><span data-patience="${c.id}">${c.patience}초</span></div>
-      <div class="bar"><i data-patience-bar="${c.id}" style="width:${Math.max(0,c.patience/c.maxPatience)*100}%"></i></div>`;
+      <div class="bar"><i data-patience-bar="${c.id}" style="width:${Math.max(0,c.patience/c.maxPatience)*100}%"></i></div>
+      ${label?`<p class="service-tag">${label}</p>`:''}${quick}`;
     const button=(kind,label)=>`<button data-${kind}="${c.id}" aria-label="${menuNames[c.menu]} 주문 ${c.id} ${label}" ${queued?'disabled':''}>${label}</button>`;
     if (c.status==='ready') return base+button('serve',reserving?'전달 예약':'직접 서빙');
     if (c.status!=='waiting') return base;
     if(state.week.milkOrder===c.id)return base+`<button data-link-milk="${c.id}">우유 연결</button>`;
     const greeting='<p class="guest-line">'+esc(rules.guestGreeting(state,c))+'</p>';
     if (available) return base+greeting+button('make',reserving?'제조 예약':'직접 제조');
-    return base+greeting+`<span class="week-shortage">${Object.entries(rules.balance.menu[c.menu].recipe).filter(([key,n])=>state.stock[key]<n).map(([key])=>({beans:'원두',milk:'우유',cake:'케이크',matcha:'말차'})[key]).join('·')} 부족</span>
+    return base+greeting+`<span class="week-shortage">${Object.entries(rules.balance.menu[c.menu].recipe).filter(([key,n])=>(rules.usable?.(state,key,c.menu)??state.stock[key])<n).map(([key])=>({beans:'원두',milk:'우유',cake:'케이크',matcha:'말차'})[key]).join('·')} 부족</span>
       ${alternative?`<button data-alternate="${alternative}">${menuNames[alternative]} ${yen(state.prices[alternative])}</button>`:''}
       <button data-cancel="${c.id}">취소</button>`;
+  }
+
+  function planControls(state,kind) {
+    if (state.phase!=='prep') return '';
+    const plan=rules.dayPlan?.(state);
+    const button=(id,value,label,current)=>`<button type="button" data-plan-kind="${id}" data-plan-value="${value}" aria-pressed="${current===value}">${label}</button>`;
+    if (kind==='window'&&state.day===2&&rules.morningSeen?.(state,'morning_window')) {
+      return `<section class="service-plan"><h3>토모리의 창가</h3><p>예약표는 첫 30초 동안 창가에 놓여요.</p>${button('window','yes','창가에 예약표 두기',plan?.window?'yes':'no')}${button('window','no','평소처럼 열기',plan?.window?'yes':'no')}</section>`;
+    }
+    if (kind==='board'&&state.day===4&&rules.morningSeen?.(state,'morning_board')) {
+      const menus=Object.keys(menuNames).filter(id=>id!=='liveSet'&&rules.available(state,id)&&rules.enough(state,id));
+      return `<section class="service-plan"><h3>아논의 추천 칠판</h3><p>영업 전반에 일반 손님 최대 두 명이 추천 메뉴를 먼저 살펴봐요.</p>
+        ${menus.map(id=>button('board',id,menuNames[id],plan?.board)).join('')}${button('board','none','비워 두기',plan?.board||'none')}</section>`;
+    }
+    if (kind!=='live'||!rules.live(state.day)) return '';
+    const preview=rules.reservePreview(state);
+    const current=state.enabled.liveSet?(plan?.live==='reserve'?'reserve':'shared'):'off';
+    const recipe=rules.balance.menu.liveSet.recipe;
+    const stock=Object.keys(recipe).map(id=>{
+      const reserved=preview.units*recipe[id];
+      return (id==='beans'?'원두':'케이크')+' 일반 '+(state.stock[id]-reserved)+' · 공연 '+reserved;
+    }).join(' / ');
+    return `<section class="service-plan"><h3>공연 세트 재료 배분</h3><p>공연이 시작되면 새 세트 접수를 닫아요. 이미 들어온 주문은 계속 준비합니다.</p>
+      ${button('live','off','기본 메뉴만 판매',current)}${button('live','shared','세트 같이 팔기',current)}
+      ${button('live','reserve','공연용 2인분 확보',current)}<p>${stock}</p>
+      ${preview.target?`<p>현재 ${preview.units}인분 확보 가능${preview.missing.length?' · '+preview.missing.join(' · '):''}</p>`:''}</section>`;
   }
 
   function stock(state, ingredients) {
     const plan=rules.recommendation(state), locked=state.phase!=='prep';
     if (!cart || cart.day!==state.day || cart.state!==state) cart={day:state.day,state,counts:{beans:0,milk:0,cake:0,matcha:0}};
-    return `<section class="week-stock"><h2>재료 발주</h2>
+    return `<section class="week-stock">${planControls(state,'window')}<h2>재료 발주</h2>
       <p class="muted">판매 메뉴, 날씨·공연 일정, 전일 주문 기록을 반영한 추정량이에요. 실제 주문은 달라질 수 있어요.</p>
       ${locked?'<p>발주는 영업 준비 중에 할 수 있어요.</p>':''}
       <form id="weekBasket"><fieldset ${locked?'disabled':''}><legend class="sr-only">재료별 발주 수량</legend>${Object.entries(ingredients).map(([id,item])=>`<label><strong>${item.name}</strong>
-      <span>보유 ${state.stock[id]} · 예상 ${plan.low[id]}~${plan.high[id]}개<br>개당 ${yen(item.cost)} · <b data-basket-row="${id}">${yen(item.cost*cart.counts[id])}</b></span>
+      <span>보유 ${state.stock[id]} · 예상 ${plan.low[id]}~${plan.high[id]}개
+      ${plan.reserve&&rules.balance.menu.liveSet.recipe[id]?`<br>일반 목표 ${plan.general[id]} · 공연 확보 목표 ${plan.reserve*rules.balance.menu.liveSet.recipe[id]}`:''}
+      <br>개당 ${yen(item.cost)} · <b data-basket-row="${id}">${yen(item.cost*cart.counts[id])}</b></span>
       <input aria-label="${item.name} 주문 수량" type="number" name="${id}" min="0" max="99" required value="${cart.counts[id]}"></label>`).join('')}
       <p id="weekBasketPreview">발주 후 보유금 ${yen(state.money-rules.basketCost(cart.counts))}</p>
-      <div class="week-basket-actions"><button type="submit" class="primary" id="weekBasketPay">발주 · ${yen(rules.basketCost(cart.counts))}</button>
-      <button type="button" id="weekBasketSuggest">추천 수량</button>${state.money<Math.max(600,plan.cost)?'<button type="button" id="weekBasketBasic">기본 묶음</button>':""}${state.money<500?'<button type="button" id="weekBasketSupport">운영 지원금</button>':""}</div></fieldset></form>
-      <p id="weekBasketFeedback" role="status"></p>${locked?'':'<button type="button" id="weekOpenFromPrep" class="primary">준비 완료 · 문 열기</button>'}<p class="muted">재료는 제조를 시작할 때 쓰이며, 남은 우유는 마감 때 20%를 버려요(소수점 버림).</p></section>`;
+      <div class="week-basket-actions"><button type="button" id="weekBasketSuggest">추천 수량</button>${state.money<Math.max(600,plan.cost)?'<button type="button" id="weekBasketBasic">기본 묶음</button>':""}${state.money<500?'<button type="button" id="weekBasketSupport">운영 지원금</button>':""}</div></fieldset></form>
+      <p class="muted">재료는 제조를 시작할 때 쓰이며, 남은 우유는 마감 때 20%를 버려요(소수점 버림).</p>
+      <div class="stock-checkout"><p id="weekBasketFeedback" role="status"></p>
+      <div class="stock-actions"><button type="submit" form="weekBasket" class="primary" id="weekBasketPay" ${locked?'disabled':''}>발주 · ${yen(rules.basketCost(cart.counts))}</button>
+      ${locked?'':'<button type="button" id="weekOpenFromPrep" class="primary">준비 완료 · 문 열기</button>'}</div>
+      <div id="stockOpenChoices" class="stock-actions" hidden><button type="button" id="stockPayOpen">발주하고 열기</button><button type="button" id="stockSkipOpen">발주 없이 열기</button></div></div></section>`;
   }
 
   function bindStock(panel, adapter) {
     const form=panel.querySelector('#weekBasket');if(!form)return;
     const read=()=>{for(const id of Object.keys(cart.counts)){const n=form.elements[id].valueAsNumber;cart.counts[id]=Number.isInteger(n)&&n>=0&&n<=99?n:0}};
-    const feedback=()=>panel.querySelector('#weekBasketFeedback');const open=panel.querySelector('#weekOpenFromPrep');if(open)open.onclick=()=>{read();if(rules.basketCost(cart.counts)>0){feedback().textContent='미결제 발주가 있어요. 먼저 결제하거나 수량을 0으로 바꿔 주세요.';return;}adapter.open();};
-    const paint=()=>{const state=adapter.state(),total=rules.basketCost(cart.counts);form.querySelector('#weekBasketPay').textContent='발주 · '+yen(total);
+    const feedback=()=>panel.querySelector('#weekBasketFeedback');
+    const choices=panel.querySelector('#stockOpenChoices'), open=panel.querySelector('#weekOpenFromPrep');
+    if(open)open.onclick=()=>{
+      if(!form.reportValidity())return;
+      read();
+      if(rules.basketCost(cart.counts)>0){
+        feedback().textContent='미결제 발주가 있어요. 수량을 구매할지 선택해 주세요.';
+        choices.hidden=false;
+        panel.querySelector('#stockPayOpen').focus();
+      }else adapter.open();
+    };
+    if(open){
+      panel.querySelector('#stockPayOpen').onclick=()=>{
+        if(!form.reportValidity())return;
+        read();
+        if(!adapter.buy({...cart.counts})){feedback().textContent='결제하지 못했어요. 수량과 보유금을 확인해 주세요.';return;}
+        cart=null;
+        adapter.render();
+        adapter.open();
+      };
+      panel.querySelector('#stockSkipOpen').onclick=()=>{cart=null;adapter.render();adapter.open();};
+    }
+    const paint=()=>{const state=adapter.state(),total=rules.basketCost(cart.counts);panel.querySelector('#weekBasketPay').textContent='발주 · '+yen(total);
       form.querySelector('#weekBasketPreview').textContent=total>state.money?'보유금 '+yen(total-state.money)+' 부족 · 수량을 줄여 주세요.':'발주 후 보유금 '+yen(state.money-total);
       for(const [id,n] of Object.entries(cart.counts))form.querySelector('[data-basket-row="'+id+'"]').textContent=yen(rules.balance.ingredients[id]*n);
     };
     const suggest=counts=>{for(const id of Object.keys(cart.counts))form.elements[id].value=counts[id]||0;read();paint();feedback().textContent='수량을 채웠어요. 발주를 누르면 결제됩니다.'};
-    form.oninput=()=>{read();paint();feedback().textContent=''};
+    form.oninput=()=>{read();paint();feedback().textContent='';if(choices)choices.hidden=true;};
     form.onsubmit=event=>{event.preventDefault();if(!form.reportValidity())return;read();const total=rules.basketCost(cart.counts);
       if(adapter.buy({...cart.counts})){cart=null;adapter.render();panel.querySelector('#weekBasketFeedback').textContent=yen(total)+' 결제했어요. 재고에 반영됐습니다.';panel.querySelector('#weekBasketPay')?.focus({preventScroll:true});}
       else feedback().textContent=total>adapter.state().money?yen(total-adapter.state().money)+' 부족합니다. 수량을 줄이거나 기본 묶음을 확인하세요.':'발주할 수량을 확인해 주세요.';
@@ -11171,19 +11484,27 @@ window.RingWeekView = (() => {
     const photo=state.week.photos.find(p=>p.day===state.day&&p.day===7);
     const next=rules.schedule(state.day+1), tomorrow={sun:'일반 영업 · 맑음',rain:'일반 영업 · 비',live:'라이브 공연',special:'특별 공연'}[next.type];
     const a=state.accounting, rejected=Object.entries(state.menuHistory.today).filter(([,x])=>x.priceRejected);
+    const action=rules.nextAction?.(state), result=rules.dailyLine?.(state), plan=rules.dayPlan?.(state);
+    const liveFailed=ledger.filter(row=>row.setReplaced||row.menu==='liveSet'&&row.accepted&&row.reason!=='sold');
+    const returned=plan?.allocation?.released||0;
+    const released=Object.entries(rules.balance.menu.liveSet.recipe).map(([id,n])=>(id==='beans'?'원두':'케이크')+' '+n*returned).join(' · ');
     const tips={stock:'부족했던 재료를 발주에서 확인해 보세요.',wait:'픽업 선반의 주문부터 전달해 보세요.',price:'메뉴판에서 가격 이탈이 있었던 메뉴를 확인해 보세요.',full:'다음 공연 전에는 좌석을 늘리는 방법도 있어요.',closing:'마감 전에 픽업 선반을 비워 두면 좋아요.',menu:'판매 중인 메뉴를 확인해 보세요.'};
     return `<section class="week-receipt">
       <div class="eyebrow">RiNG · DAY ${state.day}</div><h2>오늘의 영수증</h2>
       ${state.week.alias?`<p>${esc(state.week.alias)}</p>`:''}
       <dl><div><dt>매출</dt><dd>${yen(state.revenue)}</dd></div><div><dt>영업 손익</dt><dd>${a.accurate?yen(profit):'기록 없음'}</dd></div><div><dt>서빙</dt><dd>${state.served}건</dd></div><div><dt>놓친 손님</dt><dd>${state.left}명</dd></div></dl>
-      <p>${failures[0]?.n?failures[0].label+' '+failures[0].n+'건 · '+tips[failures[0].reason]:state.served?'모든 주문을 전달했어요.':'오늘 접수된 주문이 없었어요.'}</p>
-      ${rules.dayNotes(state).length?`<section class="receipt-moments"><h3>오늘의 선택과 결과</h3>${rules.dayNotes(state).map(line=>`<p>${esc(line)}</p>`).join('')}</section>`:''}
-      ${state.day===1?'<p class="receipt-taki">타키: …첫날부터 생지옥이었네. 내일은 저 녀석들 입구 컷부터 해야 하나…</p>':''}
+      <p>${action?esc(action.label):failures[0]?.n?failures[0].label+' '+failures[0].n+'건 · '+tips[failures[0].reason]:state.served?'모든 주문을 전달했어요.':'오늘 접수된 주문이 없었어요.'}</p>
+      ${action?`<button id="weekPlanTomorrow" aria-pressed="${state.week.nextPrep?.day===state.day+1}">${state.week.nextPrep?.day===state.day+1?'내일 먼저 보기 예약됨':'내일 해당 항목 먼저 보기'}</button>`:''}
+      ${result?`<p class="receipt-taki">${esc(result)}</p>`:''}
       <details><summary>손익·현금·주문 상세</summary><div class="receipt-accounts"><section><h3>영업 손익</h3><p>매출 ${yen(state.revenue)} − 판매 원가 ${yen(a.soldCost)} − 폐기 원가 ${yen(a.lostCost)} − 영업비 ${yen(state.overhead)}. 남은 우유 중 ${state.waste}개를 폐기했어요.</p></section>
       <section><h3>현금 흐름</h3><p>시작 ${yen(a.startCash)} · 매출 +${yen(state.revenue)} · 발주 −${yen(a.purchases)} · 시설 −${yen(a.equipment)} · 영업비 −${yen(state.overhead)} · 지원금 +${yen(a.support)} · 상환 −${yen(state.loanPaid)}</p><p>변화 ${yen(state.money-a.startCash)} · 잔액 <b>${yen(state.money)}</b></p></section></div>
       <p>재료값은 발주할 때 지불합니다. 판매와 폐기 원가는 손익에만 반영돼요.</p>
       <p>${failures.map(x=>x.label+' '+x.n+'건').join(' · ')}</p>
       ${rejected.length?`<p>가격 이탈: ${rejected.map(([id,x])=>menuNames[id]+' '+x.priceRejected+'건').join(' · ')}</p>`:''}
+      ${rules.dayNotes(state).filter(line=>line!==result).map(line=>`<p>${esc(line)}</p>`).join('')}
+      ${rules.live(state.day)?`<section><h3>공연 세트</h3><p>${!state.enabled.liveSet?'기본 메뉴만 판매':plan?.allocation?.initial?'재료 '+plan.allocation.initial+'인분 확보':'일반 주문과 재료 공유'} · 접수 ${state.soldLiveSet+liveFailed.length}건 · 전달 ${state.soldLiveSet}건</p>
+      <p>접수 후 실패 ${liveFailed.length}건${liveFailed.length?' · '+liveFailed.map(row=>row.setReplaced?'다른 메뉴로 변경':rules.reasons[row.reason]).join(' · '):''}${returned?' · 미사용 '+returned+'인분 반환 ('+released+')':''}</p></section>`:''}
+      ${plan?.board?`<p>추천 칠판 · ${menuNames[plan.board]} · 판매 ${state.menuHistory.today[plan.board]?.sold||0}건 · 가격 이탈 ${state.menuHistory.today[plan.board]?.priceRejected||0}건</p>`:''}
       ${ledger.length?`<details><summary>주문 기록 ${ledger.length}건</summary><ol class="receipt-orders">${ledger.map(row=>`<li>#${row.id} ${rules.regularNames[row.regularId]||''} ${menuNames[row.menu]||'손님'} · ${rules.reasons[row.reason]}${row.reason==='sold'?' '+yen(Number.isFinite(row.revenue)?row.revenue:0):''}${row.reaction?' · '+esc(row.reaction):''}</li>`).join('')}</ol></details>`:''}</details>
       ${story?`<button data-week-story="${story}">${esc(stories[story].title)} 감상</button>`:''}
       ${photo?`<p>첫 공연 사진을 기록에 남겼어요.</p>`:''}
@@ -11206,10 +11527,14 @@ window.RingWeekView = (() => {
     const last=state.menuHistory.yesterday?.[menu.id], labels={beans:'원두',milk:'우유',cake:'케이크',matcha:'말차'};
     const status=menu.limited&&!rules.live(state.day)?'공연일 한정':!state.enabled[menu.id]?'미판매 설정':!rules.enough(state,menu.id)?'재료 부족':'판매 가능';
     const recipe=Object.entries(menu.needs).map(([key,n])=>labels[key]+' '+n).join(' · ');
-    return `<p class="week-menu-stats"><b>${status}</b> · ${recipe}<br>제조 ${rules.makeSeconds(state,menu.id)}초 (현재 피로·설비 기준)<br>메뉴당 차액 ${yen(state.prices[menu.id]-menu.cost)} · ${state.menuHistory.yesterday?`전일 판매 ${last?.sold??0} · 가격 이탈 ${last?.priceRejected??0}`:'아직 판매 기록이 없어요.'}</p>`;
+    const competing=rules.dayPlan?.(state)?.live==='reserve'&&menu.id!=='liveSet'&&state.enabled.liveSet
+      ?Object.keys(menu.needs).filter(id=>rules.balance.menu.liveSet.recipe[id]).map(id=>labels[id]).join('·'):'';
+    const memories=state.day===5?Object.entries(state.week.guestMemory||{}).filter(([,m])=>m.lastServed===menu.id).map(([id])=>rules.regularNames[id]):[];
+    return `<p class="week-menu-stats"><b>${status}</b> · ${recipe}<br>제조 ${rules.makeSeconds(state,menu.id)}초 (현재 피로·설비 기준)<br>메뉴당 차액 ${yen(state.prices[menu.id]-menu.cost)} · ${state.menuHistory.yesterday?`전일 판매 ${last?.sold??0} · 가격 이탈 ${last?.priceRejected??0}${last?.accepted!==undefined?' · 접수 '+last.accepted:''}`:'아직 판매 기록이 없어요.'}
+      ${competing?'<br>공연 세트와 함께 쓰는 재료 · '+competing:''}${memories.length?'<br>지난번에 받은 손님 · '+memories.join('·'):''}</p>`;
   }
   function priceHelp(){return '<details class="menu-help"><summary>가격과 손님 선호</summary><p>영업 준비 중에 ¥50씩 조정하면 오늘 접수할 주문부터 적용돼요. 손님은 선호 메뉴 두 개 중 예산과 재고에 맞는 것을 고릅니다. 메뉴당 차액은 가격에서 재료 원가를 뺀 금액이며 영업비는 포함하지 않아요.</p></details>'}
-  return { menuStats,priceHelp,mount, render, edit, ticket, stock, bindStock, receipt, archive, bindArchive, scenery,
+  return { menuStats,priceHelp,mount, render, edit, ticket, stock, bindStock, receipt, archive, bindArchive, scenery,planControls,
     decorLink:()=>'<button id="weekEdit" class="primary">매장 꾸미기</button>' };
 })();
 
@@ -11544,7 +11869,7 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
  function read(input,{defaults,balance,weekValid}={}){
   const fail=code=>({ok:false,code,message:'저장 데이터의 '+({ACCOUNTING:'회계 기록',NUMBERS:'숫자 기록',PREFERENCES:'설정',PRICE:'가격',IDS:'주문 번호',JOBS:'작업 연결',WEEK:'영업 기록',SHAPE:'형식',VERSION:'버전'}[code]||'일부 기록')+'을 확인할 수 없습니다. 원본은 보존됩니다.'});
   if(!object(input)||!safeTree(input))return fail('SHAPE');
-  if(input.saveVersion!==undefined&&!integer(input.saveVersion,1,1))return fail('VERSION');
+  if(input.saveVersion!==undefined&&!integer(input.saveVersion,1,2))return fail('VERSION');
   if(!integer(input.day,1,1000000)||!number(input.money)||!['prep','open','closed'].includes(input.phase)||!object(input.stock)||!Array.isArray(input.customers)||!Array.isArray(input.stories)||!object(input.workers))return fail('SHAPE');
   let s;try{s=JSON.parse(JSON.stringify(input))}catch{return fail('SHAPE')}
   // Only absent legacy fields acquire defaults. Invalid present values are never
@@ -11569,6 +11894,10 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
   if(!integer(s.nextId,1)||!integer(s.tick)||!integer(s.arrival)||!integer(s.fatigue,0,100))return fail('NUMBERS');
   for(const k of ['served','left','revenue','expense','overhead','waste','turnedAway','priceWalkouts','varietyWalkouts','supportDebt','loanPaid','soldLiveSet','endingDays','endingServed','endingLost'])if(!integer(s[k],0,1e12))return fail('NUMBERS');
   if(!object(s.stock)||!['beans','milk','cake','matcha'].every(k=>integer(s.stock[k])))return fail('NUMBERS');
+  for(const log of [s.menuHistory?.today,s.menuHistory?.yesterday]){
+   if(log==null)continue;
+   if(!object(log)||Object.values(log).some(row=>!object(row)||row.accepted!==undefined&&!integer(row.accepted)))return fail('SHAPE');
+  }
   if(s.revision!==undefined&&!integer(s.revision))return fail('NUMBERS');
   if(!modes.includes(s.priority)||![1,2].includes(s.simSpeed)||![0,12,30].includes(s.vnSpeed)||![1000,1800,3500].includes(s.vnAutoDelay)||!['normal','large'].includes(s.vnTextSize)||typeof s.reduceMotion!=='boolean'||typeof s.sound!=='boolean'||!number(s.volume,0,1))return fail('PREFERENCES');
   for(const k of ['prices','enabled','upgrades','regulars'])if(!object(s[k]))return fail('SHAPE');
@@ -11587,18 +11916,21 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
    if(!object(c)||!integer(c.id,1)||ids.has(c.id)||!menuIds.includes(c.menu)||!['waiting','making','ready','serving'].includes(c.status)||!integer(c.patience,0,1000000)||!integer(c.maxPatience,1,1000000)||c.patience>c.maxPatience)return fail('IDS');
    if(c.price!=null&&!integer(c.price,1,10000)||c.materialCost!=null&&!integer(c.materialCost,0,10000)||c.seat!=null&&!integer(c.seat,0,63))return fail('PRICE');
    if(c.regularId!=null&&!['haru','mei','jun'].includes(c.regularId)||c.regularName!=null&&!['하루','메이','준'].includes(c.regularName)||c.profile!=null&&!['general','window','fan'].includes(c.profile))return fail('SHAPE');
+   if(c.remembers!==undefined&&!menuIds.includes(c.remembers)||c.setReplaced!==undefined&&typeof c.setReplaced!=='boolean')return fail('SHAPE');
    ids.add(c.id);
   }
   const ledger=s.week?.shift?.ledger||[];
   if(!Array.isArray(ledger)||ledger.length>1000||ledger.some(x=>!object(x)||!integer(x.id,1)))return fail('IDS');
   if(ledger.some(x=>x.revenue!==undefined&&!integer(x.revenue,0,1e12)||x.cost!==undefined&&!integer(x.cost,0,1e12)))return fail('ACCOUNTING');
+  if(ledger.some(x=>x.at!==undefined&&!integer(x.at,0,s.tick)||x.quotedPrice!==undefined&&!integer(x.quotedPrice,1,10000)||
+    x.seat!==undefined&&!integer(x.seat,0,63)||['accepted','setReplaced'].some(k=>x[k]!==undefined&&typeof x[k]!=='boolean')))return fail('SHAPE');
   if(s.nextId<=Math.max(0,...ids,...ledger.map(x=>x.id)))return fail('IDS');
   if(Object.keys(s.workers).some(k=>k!=='taki'))return fail('JOBS');
   const jobs=Object.values(s.workers).filter(Boolean);
   for(const w of jobs)if(!object(w)||!integer(w.id,1)||!['make','serve'].includes(w.kind)||!integer(w.remaining,1,1000000)||!s.customers.some(c=>c.id===w.id&&c.status===(w.kind==='make'?'making':'serving')))return fail('JOBS');
   if(s.customers.some(c=>['making','serving'].includes(c.status)&&!jobs.some(w=>w.id===c.id&&w.kind===(c.status==='making'?'make':'serve'))))return fail('JOBS');
   if(s.week){try{if(!weekValid?.(s.week,s)||s.week.queue.length>200||new Set(s.week.queue).size!==s.week.queue.length||s.week.photos.length>1000)return fail('WEEK');}catch{return fail('WEEK');}}
-  s.saveVersion=1;return {ok:true,value:s,code:null,message:''};
+  s.saveVersion=2;return {ok:true,value:s,code:null,message:''};
  }
  return {read};
 })();
@@ -11610,7 +11942,7 @@ const weekRules = window.RingWeek;
 const menus=[{id:'coffee',name:'블렌드 커피',icon:'☕',price:480,cost:130,time:5,needs:{beans:1}},{id:'latte',name:'카페 라테',icon:'🥛',price:620,cost:230,time:8,needs:{beans:1,milk:1}},{id:'cake',name:'오늘의 케이크',icon:'🍰',price:700,cost:300,time:4,needs:{cake:1}},{id:'matcha',name:'말차 라테',icon:'🍵',price:680,cost:260,time:7,needs:{matcha:1,milk:1}},{id:'liveSet',name:'공연 콜라보 세트',icon:'🎫',price:1050,cost:430,time:9,needs:{beans:1,cake:1},limited:true}];
 const ingredients={beans:{name:'커피 원두',cost:130},milk:{name:'우유',cost:100},cake:{name:'케이크',cost:300},matcha:{name:'말차',cost:160}};
 const equipment=[{id:'machine',name:'커피 머신',cost:4000,upkeep:80,effect:'원두가 들어가는 메뉴의 제조 시간 1초 단축'},{id:'seats',name:'좌석 확장',cost:3000,upkeep:50,effect:'손님을 동시에 2명 더 받을 수 있음'},{id:'display',name:'케이크 진열대',cost:2500,upkeep:40,effect:'케이크와 공연 세트의 주문 선택 가중치 35% 증가'},{id:'decor',name:'카페 장식',cost:2000,upkeep:30,effect:'단골 손님의 대기시간 3초 증가'}];
-const initial=()=>({saveVersion:1,day:1,money:4500,stock:{beans:8,milk:5,cake:5,matcha:3},phase:'prep',tick:0,served:0,left:0,revenue:0,expense:0,customers:[],nextId:1,arrival:0,workers:{taki:null},workModel:'solo-v1',priority:'manual',simSpeed:1,vnSpeed:30,vnAutoDelay:1800,vnTextSize:'normal',reduceMotion:false,stories:[],pendingStory:null,sound:true,volume:0.55,prices:{coffee:480,latte:620,cake:700,matcha:680,liveSet:1050},enabled:{coffee:true,latte:true,cake:true,matcha:false,liveSet:false},upgrades:{machine:0,seats:0,decor:0,display:0},regulars:{haru:0,mei:0,jun:0},fatigue:0,overhead:0,waste:0,turnedAway:0,priceWalkouts:0,varietyWalkouts:0,nextPerk:null,storyChoices:{},supportDebt:0,loanPaid:0,soldLiveSet:0,endingId:null,endingDays:0,endingServed:0,endingLost:0,menuHistory:{today:{},yesterday:null,complete:true},tutorial:{stage:'await_order',orderId:null},failures:{wait:0,stockWait:0,cancelled:0,missing:{},complete:true},previousFailures:null,accounting:{startCash:4500,purchases:0,equipment:0,support:0,soldCost:0,lostCost:0,accurate:true}});
+const initial=()=>({saveVersion:2,day:1,money:4500,stock:{beans:8,milk:5,cake:5,matcha:3},phase:'prep',tick:0,served:0,left:0,revenue:0,expense:0,customers:[],nextId:1,arrival:0,workers:{taki:null},workModel:'solo-v1',priority:'manual',simSpeed:1,vnSpeed:30,vnAutoDelay:1800,vnTextSize:'normal',reduceMotion:false,stories:[],pendingStory:null,sound:true,volume:0.55,prices:{coffee:480,latte:620,cake:700,matcha:680,liveSet:1050},enabled:{coffee:true,latte:true,cake:true,matcha:false,liveSet:false},upgrades:{machine:0,seats:0,decor:0,display:0},regulars:{haru:0,mei:0,jun:0},fatigue:0,overhead:0,waste:0,turnedAway:0,priceWalkouts:0,varietyWalkouts:0,nextPerk:null,storyChoices:{},supportDebt:0,loanPaid:0,soldLiveSet:0,endingId:null,endingDays:0,endingServed:0,endingLost:0,menuHistory:{today:{},yesterday:null,complete:true},tutorial:{stage:'await_order',orderId:null},failures:{wait:0,stockWait:0,cancelled:0,missing:{},complete:true},previousFailures:null,accounting:{startCash:4500,purchases:0,equipment:0,support:0,soldCost:0,lostCost:0,accurate:true}});
 let storageMode='ok', saveGuard;
 try{saveGuard=window.RingSaveGuard?.open(localStorage,KEY,{validate:validBackupState,onConflict:()=>{storageMode='conflict';updateStorageWarning();render();}})}catch{}
 function readSavedState(value){return window.RingSaveSchema.read(value,{defaults:initial(),balance:weekRules?.balance,weekValid:weekRules?.valid});}
@@ -11653,7 +11985,7 @@ function save() {
 let audioContext=null;
 function beep(type='click'){if(window.RingAudio){window.RingAudio.play(type,state);return;}if(!state.sound||!state.volume)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;if(!audioContext||audioContext.state==='closed')audioContext=new A();const ctx=audioContext;if(ctx.state==='suspended'||ctx.state==='interrupted'){const resume=ctx.resume();if(resume&&typeof resume.catch==='function')resume.catch(()=>{});return}const cues={click:[[440,0,.06]],door:[[740,0,.11],[988,.10,.17]],serve:[[560,0,.07],[840,.07,.1]],leave:[[240,0,.12],[180,.11,.16]],story:[[523,0,.09],[659,.09,.14]],choice:[[660,0,.07],[880,.08,.12]]};const notes=cues[type]||cues.click;notes.forEach(([frequency,delay,duration])=>{const o=ctx.createOscillator(),g=ctx.createGain(),at=ctx.currentTime+delay;o.type=type==='door'?'triangle':'sine';o.frequency.setValueAtTime(frequency,at);g.gain.setValueAtTime(Math.max(.0001,state.volume*.09),at);g.gain.exponentialRampToValueAtTime(.0001,at+duration);o.connect(g).connect(ctx.destination);o.onended=()=>{o.disconnect?.();g.disconnect?.()};o.start(at);o.stop(at+duration)})}catch{}}
 
-const regularProfiles=[{id:'haru',name:'하루',favorite:'coffee'},{id:'mei',name:'메이',favorite:'cake'},{id:'jun',name:'준',favorite:'latte'}];function season(day=state.day){return ['봄','여름','가을','겨울'][Math.floor((day-1)/7)%4]}function rainy(day=state.day){return state.week?weekRules.schedule(day).type==='rain':day%5===0}function seasonalFavorite(day=state.day){return ({봄:'matcha',여름:'cake',가을:'coffee',겨울:'latte'})[season(day)]}function regularForId(id){return id%4===0?regularProfiles[(Math.floor(id/4)-1)%regularProfiles.length]:null}function specialDay(day=state.day){return state.week?weekRules.schedule(day).type==='special':day%7===0}function liveDay(day=state.day){return state.week?weekRules.live(day):day%3===0||specialDay(day)}function priceFor(m){return state.prices[m.id]}function priceAcceptance(m){return Math.max(.25,Math.min(1,1.9-priceFor(m)/m.price))}function menuDayStats(id){return state.menuHistory.today[id]||(state.menuHistory.today[id]={offered:0,sold:0,priceRejected:0})}function setPrice(id,delta){if(state.phase!=='prep')return;let m=menus.find(x=>x.id===id);const [low,high]=state.week?weekRules.balance.menu[id].steps.map(n=>m.price+n*50):[Math.ceil(m.price*.7/50)*50,Math.floor(m.price*1.4/50)*50];state.prices[id]=Math.max(low,Math.min(high,state.prices[id]+delta));render(true)}function toggleMenu(id){if(state.phase!=='prep')return;if(state.week?.introService&&state.day===1&&id==='cake'){serviceNotice('첫 주문 안내를 건너뛰면 케이크 판매를 끌 수 있어요.');return}if(state.enabled[id]&&!menus.find(m=>m.id===id).limited&&menus.filter(m=>!m.limited&&state.enabled[m.id]).length===1)return;state.enabled[id]=!state.enabled[id];render(true)}function upgrade(id){if(state.week)return false;const item=equipment.find(x=>x.id===id);if(state.phase!=='prep'||!item||state.upgrades[id])return;const cost=item.cost;if(state.money<cost)return;state.money-=cost;state.expense+=cost;state.accounting.equipment+=cost;state.upgrades[id]=1;beep('upgrade');render(true)}function requestSupport(){if(state.phase!=='prep'||state.money>=500)return;const amount=Math.max(2500,1200-state.money);state.money+=amount;state.supportDebt+=amount;state.accounting.support+=amount;render(true)}function setTab(t){if(!['orders','prep','story'].includes(t))return;beep('click');window.RingCafePresentation?.selectTab(t);tab=t;menuPaused=state.phase==='open'&&t!=='orders';render()}function dayLength(){return state.week?.shift?.seconds||(state.week?weekRules.schedule(state.day).seconds:75)}function hasStock(m){return Object.entries(m.needs).every(([k,v])=>state.stock[k]>=v)}
+const regularProfiles=[{id:'haru',name:'하루',favorite:'coffee'},{id:'mei',name:'메이',favorite:'cake'},{id:'jun',name:'준',favorite:'latte'}];function season(day=state.day){return ['봄','여름','가을','겨울'][Math.floor((day-1)/7)%4]}function rainy(day=state.day){return state.week?weekRules.schedule(day).type==='rain':day%5===0}function seasonalFavorite(day=state.day){return ({봄:'matcha',여름:'cake',가을:'coffee',겨울:'latte'})[season(day)]}function regularForId(id){return id%4===0?regularProfiles[(Math.floor(id/4)-1)%regularProfiles.length]:null}function specialDay(day=state.day){return state.week?weekRules.schedule(day).type==='special':day%7===0}function liveDay(day=state.day){return state.week?weekRules.live(day):day%3===0||specialDay(day)}function priceFor(m){return state.prices[m.id]}function priceAcceptance(m){return Math.max(.25,Math.min(1,1.9-priceFor(m)/m.price))}function menuDayStats(id){return state.menuHistory.today[id]||(state.menuHistory.today[id]={offered:0,sold:0,priceRejected:0})}function setPrice(id,delta){if(state.phase!=='prep')return;let m=menus.find(x=>x.id===id);const [low,high]=state.week?weekRules.balance.menu[id].steps.map(n=>m.price+n*50):[Math.ceil(m.price*.7/50)*50,Math.floor(m.price*1.4/50)*50];state.prices[id]=Math.max(low,Math.min(high,state.prices[id]+delta));render(true)}function toggleMenu(id){if(state.phase!=='prep')return;if(state.week?.introService&&state.day===1&&id==='cake'){serviceNotice('첫 주문 안내를 건너뛰면 케이크 판매를 끌 수 있어요.');return}if(state.enabled[id]&&!menus.find(m=>m.id===id).limited&&menus.filter(m=>!m.limited&&state.enabled[m.id]).length===1)return;if(state.week&&id==='liveSet'&&weekRules.planChoice?.(state,'live',state.enabled[id]?'off':'shared')){render(true);return;}state.enabled[id]=!state.enabled[id];render(true)}function upgrade(id){if(state.week)return false;const item=equipment.find(x=>x.id===id);if(state.phase!=='prep'||!item||state.upgrades[id])return;const cost=item.cost;if(state.money<cost)return;state.money-=cost;state.expense+=cost;state.accounting.equipment+=cost;state.upgrades[id]=1;beep('upgrade');render(true)}function requestSupport(){if(state.phase!=='prep'||state.money>=500)return;const amount=Math.max(2500,1200-state.money);state.money+=amount;state.supportDebt+=amount;state.accounting.support+=amount;render(true)}function setTab(t){if(!['orders','prep','story'].includes(t))return;beep('click');window.RingCafePresentation?.selectTab(t);tab=t;menuPaused=state.phase==='open'&&t!=='orders';render()}function dayLength(){return state.week?.shift?.seconds||(state.week?weekRules.schedule(state.day).seconds:75)}function hasStock(m){if(state.week)return weekRules.enough(state,m.id);return Object.entries(m.needs).every(([k,v])=>state.stock[k]>=v)}
 let lastStats='',lastStatsHost=null;
 function renderStats(){const host=$('#stats'),signature=JSON.stringify([state.day,state.money,state.stock,state.revenue]);if(host===lastStatsHost&&signature===lastStats)return;lastStats=signature;lastStatsHost=host;host.innerHTML=`<div class="stat">영업일<b>DAY ${state.day}</b></div><div class="stat">보유금<b>¥${state.money.toLocaleString()}</b></div><div class="stat">재고<b>원두 ${state.stock.beans} · 우유 ${state.stock.milk} · 케이크 ${state.stock.cake} · 말차 ${state.stock.matcha}</b></div><div class="stat">오늘의 매출<b>¥${state.revenue.toLocaleString()}</b></div>`}
 function render(commit=false){const quick=$('#workModeQuick');if(quick){quick.hidden=state.phase!=='open';quick.textContent='업무 · '+({manual:'직접 지시',pickup:'픽업 자동',make:'제조 우선',serve:'서빙 우선',rest:'휴식'}[state.priority])+' ▾';}document.body?.classList?.toggle('service-mode',state.phase==='open');if(commit||!weekRules)save();renderStats();$('#clock').textContent=state.phase==='open'?(menuPaused?'일시정지 · 주문 화면에서 재개':state.tick>=dayLength()?'남은 주문 마무리 중':`영업 ${Math.floor(state.tick/dayLength()*100)}%`):state.phase==='prep'?'영업 준비':'영업 종료';$('#progress').textContent=`서빙 ${state.served} · 이탈 ${state.left}`;if($('#priority').value!==state.priority)$('#priority').value=state.priority;const pickup=$('#priority option[value="pickup"]');if(pickup)pickup.hidden=!state.week||state.day<3;$('#fatigueLabel').textContent='피로 '+state.fatigue+'/100';for(const name of ['봄','여름','가을','겨울'])$('.scene').classList.toggle('season-'+({봄:'spring',여름:'summer',가을:'autumn',겨울:'winter'})[name],season()===name);$('.scene').classList.toggle('rainy',rainy());$('.scene').classList.toggle('decor-upgraded',!!state.upgrades.decor);$('.scene').classList.toggle('board-unlocked',state.stories.includes('ring_board_8'));$('.scene').classList.toggle('machine-upgraded',!!state.upgrades.machine);$('.scene').classList.toggle('seats-upgraded',!!state.upgrades.seats);$('.scene').classList.toggle('display-upgraded',!!state.upgrades.display);renderWorkers();renderPeople();renderTutorial();$('#emptyScene').style.display=state.customers.length?'none':'block';$('#emptyScene').textContent=state.phase==='prep'?'문을 열면 손님이 찾아옵니다':state.phase==='open'?'손님을 기다리는 중입니다':'오늘 영업을 마쳤습니다';document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(selectedOrderId!==null&&!state.customers.some(c=>c.id===selectedOrderId))selectedOrderId=null;renderPanel();syncOrderSelection();window.RingExperience?.render(state,{tab,menuPaused,modalOpen,selectedOrderId,season:season(),rainy:rainy(),live:liveDay(),special:specialDay(),length:dayLength(),recommendation:stockRecommendation()});window.RingWeekView?.render(state,{tab,selectedOrderId});window.RingCafePresentation?.render(state);window.RingCafeSprites?.paint(state)}
@@ -11676,7 +12008,7 @@ let lastPanelTab=null,lastStorySignature=null,lastOrderSignature=null,archiveFil
 function demandWeight(m,guest){return Math.max(.15,1.6-priceFor(m)/m.price)*(guest&&guest.favorite===m.id?2:1)*(rainy()&&['coffee','latte','matcha'].includes(m.id)?1.35:1)*(m.id===seasonalFavorite()?1.35:1)*(m.limited?1.5:1)*(state.upgrades.display&&['cake','liveSet'].includes(m.id)?1.35:1)}
 function menuBreadthRetention(){const count=menus.filter(m=>!m.limited&&state.enabled[m.id]).length;return .7+.15*Math.min(2,Math.max(0,count-1))}
 function forecastDays(){return Array.from({length:7},(_,i)=>{const day=state.day+i+1;return {day,season:season(day),rainy:rainy(day),special:specialDay(day),live:liveDay(day)}})}
-function renderPanel(){const p=$('#panel');const signature=tab==='story'?JSON.stringify([state.stories,state.endingId,archiveFilter,state.week?.queue,state.week?.photos]):null;const orderSignature=tab==='orders'?JSON.stringify([state.phase,state.customers.map(c=>[c.id,c.menu,c.status,c.price,c.regularName]),state.stock,...['taki'].map(k=>state.workers[k]?[state.workers[k].id,state.workers[k].kind]:null)]):null;if(tab==='story'&&lastPanelTab==='story'&&lastStorySignature===signature)return;if(tab==='orders'&&lastPanelTab==='orders'&&typeof p.querySelector==='function'&&updateOrderBoard(p))return;lastPanelTab=tab;lastStorySignature=signature;lastOrderSignature=orderSignature;const scroll=p.scrollTop;const focused=document.activeElement;const focusKey=focused&&p.contains?.(focused)?['data-buy','data-make','data-serve','data-replay','id'].map(k=>[k,focused.getAttribute(k)]).find(([,v])=>v!==null):null;if(tab==='prep'){p.innerHTML=`<div class="prep-action"><button id="open" class="primary wide" ${state.phase!=='prep'?'disabled':''}>영업 시작하기 →</button></div><h2 class="title">오늘의 준비</h2><p class="muted">재료는 미리 구매합니다. 타키의 우선 업무를 정한 뒤 영업을 시작하세요.</p><p class="muted">${state.nextPerk==='patient'?'오늘의 준비: 손님 대기시간 +4초':state.nextPerk==='rush'?'오늘의 준비: 손님이 더 자주 방문':''}</p><p class="muted">${season()} · ${rainy()?'비 오는 날: 따뜻한 음료를 찾는 손님이 많아요':'맑은 날'} · 계절 인기: ${menus.find(m=>m.id===seasonalFavorite()).name} · 단골 응대 성공 ${Object.values(state.regulars).reduce((a,b)=>a+b,0)}회</p><section class="prep-section" data-section="stock">${state.week?window.RingWeekView.stock(state,ingredients):""}${state.week?'':`<div class="section-label">재료 발주</div>${(()=>{const r=stockRecommendation(),items=Object.entries(r.missing).filter(([,n])=>n>0).map(([k,n])=>ingredients[k].name+' '+n+'개').join(' · ');return `<div class="stock-advice"><strong>${items?'보충 제안: '+items:'권장 재고가 준비됐습니다'}</strong><p class="muted">${r.basedOnPrevious?(r.includedShortages?'전일 판매량과 기록된 재료 부족 건수에 여유분을 더했습니다. 메뉴를 바꿨다면 조정해 주세요.'+(r.includesNew?' 새 메뉴는 참고량을 사용합니다.':'')+(r.shortagePartial?' 이전 기록은 일부입니다.':''):r.includesNew?'전일 판매량과 새 메뉴 참고량에 여유분을 더했습니다. 실제 수요는 달라질 수 있습니다.':'전일 판매량과 여유분을 기준으로 계산했으며 실제 수요는 달라질 수 있습니다.'):'첫 영업을 위한 참고량이며 실제 수요는 달라질 수 있습니다.'}</p>${items?`<button id="buyRecommendation" ${state.phase!=='prep'||state.money<r.cost?'disabled':''}>제안량 한 번에 구매 · ¥${r.cost.toLocaleString()}${state.money<r.cost?' · 보유금 부족':''}</button>`:''}</div>`})()}<p class="muted">영업 중에는 추가 발주할 수 없습니다. ${menus.filter(m=>state.enabled[m.id]&&(!m.limited||(state.week?weekRules.live(state.day):specialDay()))&&!hasStock(m)).length?'현재 재료가 모자란 메뉴: '+menus.filter(m=>state.enabled[m.id]&&(!m.limited||(state.week?weekRules.live(state.day):specialDay()))&&!hasStock(m)).map(m=>m.name).join(', '):'영업 중 재료가 떨어지면 해당 주문을 품절 취소할 수 있습니다.'}</p>${Object.entries(ingredients).map(([k,v])=>`<div class="card row"><div><strong>${v.name}</strong><div class="muted">보유 ${state.stock[k]}개 · 개당 ¥${v.cost}</div></div><div class="buy-actions"><button data-buy="${k}:1" aria-label="${v.name} 1개 구매" ${state.phase!=='prep'||state.money<v.cost?'disabled':''}>+1</button><button data-buy="${k}:5" aria-label="${v.name} 5개 구매 ¥${(v.cost*5).toLocaleString()}" ${state.phase!=='prep'||state.money<v.cost*5?'disabled':''}>+5 ¥${(v.cost*5).toLocaleString()}</button></div></div>`).join('')}`}</section><section class="prep-section" data-section="menu"><div class="section-label">오늘의 메뉴 · 가격과 판매 여부</div>${state.week?window.RingWeekView.priceHelp():`<details class="menu-help"><summary>가격과 메뉴 인기도</summary><p class="muted">가격이 높으면 주문을 망설입니다. 가격에 동의한 손님도 메뉴가 적으면 떠날 수 있습니다. 상시 메뉴 한 종류일 때 남을 확률 70%, 두 종류 85%, 세 종류 이상 100%입니다. 한정 메뉴는 종류 수에서 제외합니다. 현재 메뉴 폭 유지율: <strong>${Math.round(menuBreadthRetention()*100)}%</strong>. 우유는 영업 후 일부 폐기됩니다.</p></details>`}${menus.map(m=>`<div class="card"><div class="row"><strong>${m.icon} ${m.name}${m.id===seasonalFavorite()?' · 계절 인기':''}${m.limited?(state.week?' · 공연일 한정':' · 특별 공연일 한정'):''}</strong><button data-toggle="${m.id}" aria-label="${m.name} 판매 설정" aria-pressed="${state.enabled[m.id]}" ${state.phase!=='prep'?'disabled':''}>${state.enabled[m.id]?'판매 중':'판매 안 함'}</button></div><div class="row"><button data-price="${m.id}:-50" aria-label="${m.name} 가격 내리기" ${state.phase!=='prep'?'disabled':''}>−</button><span>¥${priceFor(m)}</span><button data-price="${m.id}:50" aria-label="${m.name} 가격 올리기" ${state.phase!=='prep'?'disabled':''}>+</button><span class="muted">원가 ¥${m.cost}</span></div>${state.week?window.RingWeekView.menuStats(state,m):`<div class="muted">판매 한 건당 재료비를 뺀 금액 ¥${(priceFor(m)-m.cost).toLocaleString()} · 선택 후 가격 수용률 ${Math.round(priceAcceptance(m)*100)}%${state.menuHistory.yesterday?` · 전일 판매 ${state.menuHistory.yesterday[m.id]?.sold||0}건 · 가격 포기 ${state.menuHistory.yesterday[m.id]?.priceRejected||0}건${state.menuHistory.yesterdayComplete?'':' (일부 기록)'}`:''}</div>`}</div>`).join('')}</section><section class="prep-section" data-section="equipment">${state.week?window.RingWeekView.decorLink():""}${state.week?'<p class="muted growth-path">업무 개선: 커피 머신·픽업 선반<br>공간 개선: 창가등·좌석 또는 장식</p>':`<div class="section-label">설비 · 기본 운영비 하루 ¥2,300</div><p class="muted">${specialDay()?'오늘은 특별 공연일! 콜라보 세트를 판매할 수 있습니다.':liveDay()?'오늘은 라이브 공연일! 공연 전후로 손님이 늘어납니다.':'오늘은 일반 영업일입니다.'}${liveDay()&&state.day>=15?' 공연 전후에는 손님이 빠르게 몰립니다.':''} · 타키 피로 ${state.fatigue}/100</p>${equipment.map(item=>`<div class="card equipment-card"><div class="row"><strong>${item.name}</strong><button data-upgrade="${item.id}" aria-label="${item.name} ${state.upgrades[item.id]?'설치됨':'구매 ¥'+item.cost.toLocaleString()}" ${state.phase!=='prep'||state.upgrades[item.id]||state.money<item.cost?'disabled':''}>${state.upgrades[item.id]?'설치됨':'구매 ¥'+item.cost.toLocaleString()}</button></div><div class="muted">${item.effect}</div><div class="muted">유지비 하루 ¥${item.upkeep} · ${state.upgrades[item.id]?'설치 완료':state.money>=item.cost?'구매 후 보유금 ¥'+(state.money-item.cost).toLocaleString():'¥'+(item.cost-state.money).toLocaleString()+' 부족'}</div></div>`).join('')}<p class="muted">단골은 응대할수록 최대 4초 더 기다립니다.</p>`}</section><section class="prep-section" data-section="calendar"><div class="section-label">앞으로 7일 · 영업 예보</div><div class="forecast" aria-label="다음 7일 영업 예보">${forecastDays().map(d=>`<div class="forecast-day"><strong>DAY ${d.day}</strong><span>${d.special?'특별 공연':d.live?'라이브':'일반 영업'}${d.live&&d.day>=15?' · 혼잡':''}</span><small>${d.season} · ${d.rainy?'비':'맑음'}</small></div>`).join('')}</div><div class="card"><div class="row"><strong>운영 지원</strong><span class="muted">미상환 ¥${state.supportDebt.toLocaleString()}</span></div><p class="muted">보유금이 ¥500 미만이면 무이자 지원금을 받을 수 있습니다. 마감 때 매출의 최대 20%를 상환하며 ¥1,000은 남겨 둡니다.</p><button id="support" ${state.phase!=='prep'||state.money>=500?'disabled':''}>운영 지원금 받기</button></div></section>`;if(state.week)window.RingWeekView?.bindStock(p,weekViewAdapter());const suggested=$('#buyRecommendation');if(suggested)suggested.onclick=buyRecommendation;p.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const [id,amount]=b.dataset.buy.split(':');buy(id,Number(amount))});p.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>toggleMenu(b.dataset.toggle));p.querySelectorAll('[data-price]').forEach(b=>b.onclick=()=>{let [id,delta]=b.dataset.price.split(':');setPrice(id,Number(delta))});p.querySelectorAll('[data-upgrade]').forEach(b=>b.onclick=()=>upgrade(b.dataset.upgrade));if(state.week){const editButton=$('#weekEdit');if(editButton)editButton.onclick=()=>window.RingWeekView.edit()}$('#support').onclick=requestSupport;$('#open').onclick=openDay}
+function renderPanel(){const p=$('#panel');const signature=tab==='story'?JSON.stringify([state.stories,state.endingId,archiveFilter,state.week?.queue,state.week?.photos]):null;const orderSignature=tab==='orders'?JSON.stringify([state.phase,state.customers.map(c=>[c.id,c.menu,c.status,c.price,c.regularName]),state.stock,...['taki'].map(k=>state.workers[k]?[state.workers[k].id,state.workers[k].kind]:null)]):null;if(tab==='story'&&lastPanelTab==='story'&&lastStorySignature===signature)return;if(tab==='orders'&&lastPanelTab==='orders'&&typeof p.querySelector==='function'&&updateOrderBoard(p))return;lastPanelTab=tab;lastStorySignature=signature;lastOrderSignature=orderSignature;const scroll=p.scrollTop;const focused=document.activeElement;const focusKey=focused&&p.contains?.(focused)?['data-buy','data-make','data-serve','data-replay','id'].map(k=>[k,focused.getAttribute(k)]).find(([,v])=>v!==null):null;if(tab==='prep'){p.innerHTML=`<div class="prep-action"><button id="open" class="primary wide" ${state.phase!=='prep'?'disabled':''}>영업 시작하기 →</button></div><h2 class="title">오늘의 준비</h2><p class="muted">재료는 미리 구매합니다. 타키의 우선 업무를 정한 뒤 영업을 시작하세요.</p><p class="muted">${state.nextPerk==='patient'?'오늘의 준비: 손님 대기시간 +4초':state.nextPerk==='rush'?'오늘의 준비: 손님이 더 자주 방문':''}</p><p class="muted">${season()} · ${rainy()?'비 오는 날: 따뜻한 음료를 찾는 손님이 많아요':'맑은 날'} · 계절 인기: ${menus.find(m=>m.id===seasonalFavorite()).name} · 단골 응대 성공 ${Object.values(state.regulars).reduce((a,b)=>a+b,0)}회</p><section class="prep-section" data-section="stock">${state.week?window.RingWeekView.stock(state,ingredients):""}${state.week?'':`<div class="section-label">재료 발주</div>${(()=>{const r=stockRecommendation(),items=Object.entries(r.missing).filter(([,n])=>n>0).map(([k,n])=>ingredients[k].name+' '+n+'개').join(' · ');return `<div class="stock-advice"><strong>${items?'보충 제안: '+items:'권장 재고가 준비됐습니다'}</strong><p class="muted">${r.basedOnPrevious?(r.includedShortages?'전일 판매량과 기록된 재료 부족 건수에 여유분을 더했습니다. 메뉴를 바꿨다면 조정해 주세요.'+(r.includesNew?' 새 메뉴는 참고량을 사용합니다.':'')+(r.shortagePartial?' 이전 기록은 일부입니다.':''):r.includesNew?'전일 판매량과 새 메뉴 참고량에 여유분을 더했습니다. 실제 수요는 달라질 수 있습니다.':'전일 판매량과 여유분을 기준으로 계산했으며 실제 수요는 달라질 수 있습니다.'):'첫 영업을 위한 참고량이며 실제 수요는 달라질 수 있습니다.'}</p>${items?`<button id="buyRecommendation" ${state.phase!=='prep'||state.money<r.cost?'disabled':''}>제안량 한 번에 구매 · ¥${r.cost.toLocaleString()}${state.money<r.cost?' · 보유금 부족':''}</button>`:''}</div>`})()}<p class="muted">영업 중에는 추가 발주할 수 없습니다. ${menus.filter(m=>state.enabled[m.id]&&(!m.limited||(state.week?weekRules.live(state.day):specialDay()))&&!hasStock(m)).length?'현재 재료가 모자란 메뉴: '+menus.filter(m=>state.enabled[m.id]&&(!m.limited||(state.week?weekRules.live(state.day):specialDay()))&&!hasStock(m)).map(m=>m.name).join(', '):'영업 중 재료가 떨어지면 해당 주문을 품절 취소할 수 있습니다.'}</p>${Object.entries(ingredients).map(([k,v])=>`<div class="card row"><div><strong>${v.name}</strong><div class="muted">보유 ${state.stock[k]}개 · 개당 ¥${v.cost}</div></div><div class="buy-actions"><button data-buy="${k}:1" aria-label="${v.name} 1개 구매" ${state.phase!=='prep'||state.money<v.cost?'disabled':''}>+1</button><button data-buy="${k}:5" aria-label="${v.name} 5개 구매 ¥${(v.cost*5).toLocaleString()}" ${state.phase!=='prep'||state.money<v.cost*5?'disabled':''}>+5 ¥${(v.cost*5).toLocaleString()}</button></div></div>`).join('')}`}</section><section class="prep-section" data-section="menu">${state.week?window.RingWeekView.planControls?.(state,'board')||'':''}<div class="section-label">오늘의 메뉴 · 가격과 판매 여부</div>${state.week?window.RingWeekView.priceHelp():`<details class="menu-help"><summary>가격과 메뉴 인기도</summary><p class="muted">가격이 높으면 주문을 망설입니다. 가격에 동의한 손님도 메뉴가 적으면 떠날 수 있습니다. 상시 메뉴 한 종류일 때 남을 확률 70%, 두 종류 85%, 세 종류 이상 100%입니다. 한정 메뉴는 종류 수에서 제외합니다. 현재 메뉴 폭 유지율: <strong>${Math.round(menuBreadthRetention()*100)}%</strong>. 우유는 영업 후 일부 폐기됩니다.</p></details>`}${menus.map(m=>`<div class="card" data-prep-menu="${m.id}" tabindex="-1"><div class="row"><strong>${m.icon} ${m.name}${m.id===seasonalFavorite()?' · 계절 인기':''}${m.limited?(state.week?' · 공연일 한정':' · 특별 공연일 한정'):''}</strong><button data-toggle="${m.id}" aria-label="${m.name} 판매 설정" aria-pressed="${state.enabled[m.id]}" ${state.phase!=='prep'?'disabled':''}>${state.enabled[m.id]?'판매 중':'판매 안 함'}</button></div><div class="row"><button data-price="${m.id}:-50" aria-label="${m.name} 가격 내리기" ${state.phase!=='prep'?'disabled':''}>−</button><span>¥${priceFor(m)}</span><button data-price="${m.id}:50" aria-label="${m.name} 가격 올리기" ${state.phase!=='prep'?'disabled':''}>+</button><span class="muted">원가 ¥${m.cost}</span></div>${state.week?window.RingWeekView.menuStats(state,m):`<div class="muted">판매 한 건당 재료비를 뺀 금액 ¥${(priceFor(m)-m.cost).toLocaleString()} · 선택 후 가격 수용률 ${Math.round(priceAcceptance(m)*100)}%${state.menuHistory.yesterday?` · 전일 판매 ${state.menuHistory.yesterday[m.id]?.sold||0}건 · 가격 포기 ${state.menuHistory.yesterday[m.id]?.priceRejected||0}건${state.menuHistory.yesterdayComplete?'':' (일부 기록)'}`:''}</div>`}</div>`).join('')}</section><section class="prep-section" data-section="equipment">${state.week?window.RingWeekView.decorLink():""}${state.week?'<p class="muted growth-path">업무 개선: 커피 머신·픽업 선반<br>공간 개선: 창가등·좌석 또는 장식</p>':`<div class="section-label">설비 · 기본 운영비 하루 ¥2,300</div><p class="muted">${specialDay()?'오늘은 특별 공연일! 콜라보 세트를 판매할 수 있습니다.':liveDay()?'오늘은 라이브 공연일! 공연 전후로 손님이 늘어납니다.':'오늘은 일반 영업일입니다.'}${liveDay()&&state.day>=15?' 공연 전후에는 손님이 빠르게 몰립니다.':''} · 타키 피로 ${state.fatigue}/100</p>${equipment.map(item=>`<div class="card equipment-card"><div class="row"><strong>${item.name}</strong><button data-upgrade="${item.id}" aria-label="${item.name} ${state.upgrades[item.id]?'설치됨':'구매 ¥'+item.cost.toLocaleString()}" ${state.phase!=='prep'||state.upgrades[item.id]||state.money<item.cost?'disabled':''}>${state.upgrades[item.id]?'설치됨':'구매 ¥'+item.cost.toLocaleString()}</button></div><div class="muted">${item.effect}</div><div class="muted">유지비 하루 ¥${item.upkeep} · ${state.upgrades[item.id]?'설치 완료':state.money>=item.cost?'구매 후 보유금 ¥'+(state.money-item.cost).toLocaleString():'¥'+(item.cost-state.money).toLocaleString()+' 부족'}</div></div>`).join('')}<p class="muted">단골은 응대할수록 최대 4초 더 기다립니다.</p>`}</section><section class="prep-section" data-section="calendar">${state.week?window.RingWeekView.planControls?.(state,'live')||'':''}<div class="section-label">앞으로 7일 · 영업 예보</div><div class="forecast" aria-label="다음 7일 영업 예보">${forecastDays().map(d=>`<div class="forecast-day"><strong>DAY ${d.day}</strong><span>${d.special?'특별 공연':d.live?'라이브':'일반 영업'}${d.live&&d.day>=15?' · 혼잡':''}</span><small>${d.season} · ${d.rainy?'비':'맑음'}</small></div>`).join('')}</div><div class="card"><div class="row"><strong>운영 지원</strong><span class="muted">미상환 ¥${state.supportDebt.toLocaleString()}</span></div><p class="muted">보유금이 ¥500 미만이면 무이자 지원금을 받을 수 있습니다. 마감 때 매출의 최대 20%를 상환하며 ¥1,000은 남겨 둡니다.</p><button id="support" ${state.phase!=='prep'||state.money>=500?'disabled':''}>운영 지원금 받기</button></div></section>`;if(state.week){window.RingWeekView?.bindStock(p,weekViewAdapter());bindServicePlan(p);}const suggested=$('#buyRecommendation');if(suggested)suggested.onclick=buyRecommendation;p.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const [id,amount]=b.dataset.buy.split(':');buy(id,Number(amount))});p.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>toggleMenu(b.dataset.toggle));p.querySelectorAll('[data-price]').forEach(b=>b.onclick=()=>{let [id,delta]=b.dataset.price.split(':');setPrice(id,Number(delta))});p.querySelectorAll('[data-upgrade]').forEach(b=>b.onclick=()=>upgrade(b.dataset.upgrade));if(state.week){const editButton=$('#weekEdit');if(editButton)editButton.onclick=()=>window.RingWeekView.edit()}$('#support').onclick=requestSupport;$('#open').onclick=openDay}
 else if(tab==='orders'){
  p.innerHTML=`<div class="order-heading"><h2 class="title">주문 현황</h2><div class="order-workers"><span>타키 <b data-worker="taki">${workerText('taki')}</b></span></div></div><div class="order-grid">${state.customers.map(c=>`<div class="card order-card" data-order-card="${c.id}" data-order-status="${c.status}">${orderCardContent(c)}</div>`).join('')}</div><div class="card muted order-empty" ${state.customers.length?'hidden':''}>${emptyOrderText()}</div>`;
  p.querySelectorAll('[data-order-card]').forEach(bindOrderButtons);
@@ -11702,6 +12034,9 @@ function bindOrderButtons(card){
  card.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>cancelUnavailable(+b.dataset.cancel));
  card.querySelectorAll('[data-link-milk]').forEach(b=>b.onclick=()=>weekViewAdapter().linkMilk(+b.dataset.linkMilk));
  card.querySelectorAll('[data-alternate]').forEach(b=>b.onclick=()=>weekViewAdapter().switchOrder(Number(card.dataset.orderCard),b.dataset.alternate));
+ card.querySelectorAll('[data-first-work]').forEach(b=>b.onclick=()=>{
+  if(weekRules.firstWork(state,Number(b.dataset.firstWork)))render(true);
+ });
 }
 // 다른 주문의 변화가 클릭 대상의 DOM을 교체하지 않도록 주문 ID별 요소를 유지한다.
 function updateOrderBoard(panel){
@@ -11711,7 +12046,7 @@ function updateOrderBoard(panel){
  for(const customer of state.customers){
   const key=String(customer.id),menu=menus.find(m=>m.id===customer.menu);let card=existing.get(key);
   if(card)existing.delete(key);else{card=document.createElement('div');card.className='card order-card';card.tabIndex=-1;card.dataset.orderCard=key;grid.appendChild(card)}
-  const status=state.week?JSON.stringify([customer.status,customer.menu,hasStock(menu),state.week.nextJob?.id===customer.id,state.week.nextJob?.kind,state.week.milkOrder===customer.id,!!state.workers.taki,state.customers.filter(c=>c.status==='ready').length,state.tick>=dayLength()]):customer.status;
+  const status=state.week?JSON.stringify([customer.status,customer.menu,hasStock(menu),state.week.nextJob?.id===customer.id,state.week.nextJob?.kind,state.week.milkOrder===customer.id,state.priority,weekRules.dayPlan?.(state)?.priority===customer.id,!!state.workers.taki,state.customers.filter(c=>c.status==='ready').length,state.tick>=dayLength()]):customer.status;
   if(card.dataset.orderStatus!==status){const focused=card.contains?.(document.activeElement);card.dataset.orderStatus=status;card.innerHTML=orderCardContent(customer);bindOrderButtons(card);if(focused)(card.querySelector('button')||card).focus?.({preventScroll:true})}
   if(state.week){card.style.order=customer.status==='ready'?-100+customer.patience:customer.patience;continue;}
   let shortage=card.querySelector('[data-shortage]');const missing=customer.status==='waiting'?missingIngredients(menu).map(x=>x.name+' '+x.count+'개 부족').join(' · '):'';if(shortage){shortage.textContent=missing;shortage.hidden=!missing}else if(missing){const action=card.querySelector('.order-action');if(action){shortage=document.createElement('span');shortage.className='order-shortage';shortage.dataset.shortage=key;shortage.textContent=missing;action.prepend(shortage)}}
@@ -11851,10 +12186,10 @@ function clearMorningLine(){try{sessionStorage.removeItem(MORNING_MARK)}catch{}}
 function activeStoryDefinition(){const base=storyData[activeStory.id];return window.RingWeekStory?.definition(activeStory.id,base,activeStory.compact)||base}
 function advanceStory(){if(!activeStory)return;stopVnTyping();const s=activeStoryDefinition();if(s.choice&&storyIndex===s.lines.length-1&&activeStory.choice===null)return;if(s.choice&&activeStory.choice!==null&&storyIndex===s.lines.length-1){storyIndex++;if(!activeStory.replay){state.pendingStory.index=storyIndex;save()}drawStory();return}if(++storyIndex<s.lines.length){if(!activeStory.replay){state.pendingStory.index=storyIndex;rememberMorningLine();save()}drawStory();return}stopVnAuto();if(!activeStory.replay){const id=activeStory.id;
  if(state.week?.morning?.status==='active'&&state.week.morning.id===id){state.week.morning.status='completed';clearMorningLine()}
- if(id!==window.RingMorning?.fallback&&!state.stories.includes(id))state.stories.push(id);if(Object.hasOwn(endings,activeStory.id))state.endingId=activeStory.id;if(activeStory.choice!==null)state.storyChoices[activeStory.id]=activeStory.choice;state.pendingStory=null;if(state.week){state.week.queue=state.week.queue.filter(id=>id!==activeStory.id);if(state.week.bookmarks)delete state.week.bookmarks[activeStory.id];window.RingWeekStory?.complete(state,activeStory.id)}save()}const wasClose=state.phase==='closed'&&!activeStory.replay;activeStory=null;finishStoryStage(wasClose)}
+ if(id!==window.RingMorning?.fallback&&!state.stories.includes(id))state.stories.push(id);if(Object.hasOwn(endings,activeStory.id))state.endingId=activeStory.id;if(activeStory.choice!==null)state.storyChoices[activeStory.id]=activeStory.choice;state.pendingStory=null;if(state.week){state.week.queue=state.week.queue.filter(id=>id!==activeStory.id);if(state.week.bookmarks)delete state.week.bookmarks[activeStory.id];window.RingWeekStory?.complete(state,activeStory.id)}save()}const wasClose=state.phase==='closed'&&!activeStory.replay;const followPrep=!activeStory.replay&&state.week?.morning?.id===activeStory.id&&state.week.nextPrep?.day===state.day;activeStory=null;finishStoryStage(wasClose,followPrep)}
 function reducedMotion(){return !!state.reduceMotion||(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
 function applyPreferences(){document.body?.classList?.toggle('reduce-motion',!!state.reduceMotion);document.body?.classList?.toggle('vn-large-text',state.vnTextSize==='large')}
-function finishStoryStage(wasClose){const stage=$('#vnStage');const finish=()=>{if(activeStory||window.RingTitle?.blocked||(stage?.isConnected===false))return;$('#modal').classList.add('hidden');$('#modal').classList.remove('vn-overlay');$('#app').inert=false;modalOpen=false;if(wasClose)summary();else render()};if(stage?.isConnected&&!reducedMotion()){stage.inert=true;stage.classList.remove('scene-entering');stage.classList.add('scene-exiting');setTimeout(finish,220)}else finish()}
+function finishStoryStage(wasClose,followPrep=false){const stage=$('#vnStage');const finish=()=>{if(activeStory||window.RingTitle?.blocked||(stage?.isConnected===false))return;$('#modal').classList.add('hidden');$('#modal').classList.remove('vn-overlay');$('#app').inert=false;modalOpen=false;if(wasClose)summary();else if(followPrep)applyNextPrep();else render()};if(stage?.isConnected&&!reducedMotion()){stage.inert=true;stage.classList.remove('scene-entering');stage.classList.add('scene-exiting');setTimeout(finish,220)}else finish()}
 function vnSpeaker(name){return name==='타키 속마음'?'타키':name}
 function showVnLog(){clearVnAutoTimer();stopVnTyping();vnMenuOpen=false;vnLogOpen=true;$('#modal').classList.remove('vn-overlay');const s=activeStoryDefinition();$('#dialog').innerHTML=`<div class="eyebrow">DIALOGUE LOG · ${s.title}</div><h2>대화 기록</h2><div class="vn-log">${s.lines.slice(0,storyIndex+1).map(([name,line])=>`<div class="log-line"><strong>${vnSpeaker(name)}</strong><p>${line}</p></div>`).join('')}${s.choice&&activeStory.choice!==null?`<div class="log-line"><strong>선택</strong><p>${s.choice.options[activeStory.choice].label}</p></div>`:''}${s.choice&&activeStory.choice!==null&&storyIndex>=s.lines.length?`<div class="log-line"><strong>${s.choice.options[activeStory.choice].reply[0]}</strong><p>${s.choice.options[activeStory.choice].reply[1]}</p></div>`:''}</div><div class="actions"><button id="logBack" class="primary">돌아가기</button></div>`;$('#logBack').onclick=()=>{vnLogOpen=false;drawStory();completeVnText()};$('#logBack').focus?.()}
 function chooseStory(index){const s=activeStoryDefinition();if(!s.choice||storyIndex!==s.lines.length-1||!s.choice.options[index]||activeStory.choice!==null)return;activeStory.choice=index;storyIndex++;beep('choice');if(!activeStory.replay){state.pendingStory.choice=index;state.pendingStory.index=storyIndex;state.nextPerk=s.choice.options[index].perk;save()}drawStory()}
@@ -11957,7 +12292,7 @@ function drawStory(){
 // 마감 후 선택 가능한 일상 이야기. 메인과 보상 선택지는 기존 자동 진행 순서를 따른다.
 function availableAfterHours(){return Object.keys(additionalStories).filter(id=>{const story=additionalStories[id];return !Object.hasOwn(mainArc,id)&&!story.choice&&!state.stories.includes(id)&&state.day>=story.day&&(!story.when||story.when(state))})}
 function summary(){if(state.week){showWeekReceipt();return}beep('result');modalOpen=true;$('#app').inert=true;$('#modal').classList.remove('hidden');const afterHours=availableAfterHours();$('#dialog').innerHTML=`<div class="eyebrow">DAY ${state.day} · RESULT</div><h2>오늘도, 수고했어.</h2><div class="result-hero"><span>${state.accounting.accurate?'오늘의 영업 손익':'오늘의 매출'}</span><strong class="${state.accounting.accurate&&state.revenue-state.accounting.soldCost-state.overhead-state.accounting.lostCost-state.waste*ingredients.milk.cost<0?'negative':''}">¥${(state.accounting.accurate?state.revenue-state.accounting.soldCost-state.overhead-state.accounting.lostCost-state.waste*ingredients.milk.cost:state.revenue).toLocaleString()}</strong><div><span>서빙 <b>${state.served}건</b></span><span>이탈 <b>${state.left}건</b></span><span>보유금 <b>¥${state.money.toLocaleString()}</b></span></div></div><p class="failure-summary">${failureSummary()}${Object.keys(state.failures.missing).length?' 부족 재료: '+Object.keys(state.failures.missing).map(k=>ingredients[k].name).join(', ')+'.':''}${state.failures.complete?'':' (이전 저장의 일부 기록은 포함되지 않습니다.)'}</p><details class="settlement-details"><summary>매출·원가·현금 흐름 상세 보기</summary>${state.accounting.accurate?`<div class="card"><strong>오늘의 수익성</strong><p>매출 ¥${state.revenue.toLocaleString()} − 판매 재료 원가 ¥${state.accounting.soldCost.toLocaleString()} = 매출 총이익 <b>¥${(state.revenue-state.accounting.soldCost).toLocaleString()}</b></p><p>매출 총이익 − 영업비 ¥${state.overhead.toLocaleString()} − 주문 손실 ¥${state.accounting.lostCost.toLocaleString()} − 우유 폐기 ¥${(state.waste*ingredients.milk.cost).toLocaleString()} = 영업 손익 <b>¥${(state.revenue-state.accounting.soldCost-state.overhead-state.accounting.lostCost-state.waste*ingredients.milk.cost).toLocaleString()}</b></p></div><div class="card"><strong>오늘의 현금 흐름</strong><p>매출 +¥${state.revenue.toLocaleString()} · 재료 구입 −¥${state.accounting.purchases.toLocaleString()} · 설비 구입 −¥${state.accounting.equipment.toLocaleString()}<br>영업비 −¥${state.overhead.toLocaleString()} · 지원금 +¥${state.accounting.support.toLocaleString()} · 지원금 상환 −¥${state.loanPaid.toLocaleString()}</p><p>보유금 변화 <b>¥${(state.money-state.accounting.startCash).toLocaleString()}</b> · 남은 보유금 ¥${state.money.toLocaleString()}</p><p class="muted">재료비는 판매할 때 원가로 계산하며, 현금은 구매할 때 차감합니다. 설비 구입은 현금 흐름에 포함합니다.</p></div>`:`<p>매출 ¥${state.revenue.toLocaleString()} · 총 지출 ¥${state.expense.toLocaleString()} (영업비 ¥${state.overhead.toLocaleString()})</p><p class="muted">이전 버전에서 진행 중이던 하루는 원가 기록이 없어 세부 손익을 표시하지 않습니다. 다음 영업일부터 확인할 수 있습니다.</p>`}<p>지원금 미상환 ¥${state.supportDebt.toLocaleString()}<br>우유 폐기 ${state.waste}개 · 만석으로 놓친 손님 ${state.turnedAway}명 · 가격을 보고 떠난 손님 ${state.priceWalkouts}명 · 원하는 메뉴가 적어 떠난 손님 ${state.varietyWalkouts}명</p></details><p class="muted">${state.endingId?'엔딩을 본 뒤에도 영업과 남은 이야기를 계속할 수 있습니다.':'남은 재고와 보유금은 내일로 이어집니다.'}</p>${afterHours.length?`<div class="section-label">마감 후 이야기 · ${afterHours.length}편</div><p class="muted">조건을 만족한 일상 이야기입니다. 지금 읽거나 다음에 만나도 됩니다.</p><div class="actions">${afterHours.slice(0,4).map(id=>`<button data-after-hours="${id}">${additionalStories[id].title}</button>`).join('')}</div>`:''}<div class="actions"><button id="tomorrow" class="primary">다음 영업일 →</button></div>`;$('#dialog').querySelectorAll('[data-after-hours]').forEach(button=>button.onclick=()=>{const id=button.dataset.afterHours;if(state.phase==='closed'&&availableAfterHours().includes(id))showStory(id)});$('#tomorrow').onclick=nextDay}
-function nextDay(){if(weekRules&&(state.phase!=='closed'||activeStory||storageMode==='conflict'))return;clearServiceNotice();state.day++;state.phase='prep';state.menuHistory.today={};state.menuHistory.complete=true;state.failures={wait:0,stockWait:0,cancelled:0,missing:{},complete:true};state.served=0;state.left=0;state.revenue=0;state.expense=0;state.overhead=0;state.loanPaid=0;state.soldLiveSet=0;state.waste=0;state.turnedAway=0;state.priceWalkouts=0;state.varietyWalkouts=0;state.fatigue=Math.max(0,state.fatigue-12);state.tick=0;selectedOrderId=null;menuPaused=false;state.accounting={startCash:state.money,purchases:0,equipment:0,support:0,soldCost:0,lostCost:0,accurate:true};modalOpen=false;$('#modal').classList.add('hidden');$('#app').inert=false;tab='prep';if(weekRules){weekRules.init(state);state.week.shift=null;state.week.undo=null;state.week.nextJob=null}
+function nextDay(){if(weekRules&&(state.phase!=='closed'||activeStory||storageMode==='conflict'))return;clearServiceNotice();state.day++;state.phase='prep';state.menuHistory.today={};state.menuHistory.complete=true;state.failures={wait:0,stockWait:0,cancelled:0,missing:{},complete:true};state.served=0;state.left=0;state.revenue=0;state.expense=0;state.overhead=0;state.loanPaid=0;state.soldLiveSet=0;state.waste=0;state.turnedAway=0;state.priceWalkouts=0;state.varietyWalkouts=0;state.fatigue=Math.max(0,state.fatigue-12);state.tick=0;selectedOrderId=null;menuPaused=false;state.accounting={startCash:state.money,purchases:0,equipment:0,support:0,soldCost:0,lostCost:0,accurate:true};modalOpen=false;$('#modal').classList.add('hidden');$('#app').inert=false;tab='prep';if(weekRules){weekRules.init(state);state.week.shift=null;state.week.undo=null;state.week.nextJob=null;weekRules.advancePlan?.(state)}
  if(state.week&&window.RingMorning){window.RingExperience?.choosePrep('stock');const morning=window.RingMorning.begin(state,weekRules.schedule(state.day));render();showStory(morning.id);return}
  render(true)}
 
@@ -11972,7 +12307,7 @@ function titleResume(){
   const id=state.week.morning.id;showStory(id,false,restoreMorningLine(id));
  }else if(state.pendingStory&&storyData[state.pendingStory.id])showStory(state.pendingStory.id,false,state.pendingStory.index);
  else if(!state.stories.includes('intro'))showStory('intro');
- else if(state.phase==='closed')summary();else render();
+ else if(state.phase==='closed')summary();else if(state.week?.nextPrep?.day===state.day&&state.phase==='prep')applyNextPrep();else render();
 }
 function titleNewGame(){
  window.RingAssets?.prepareService();clearMorningLine();const previous=state;stopVnAuto();stopVnTyping();storageMode='ok';clearServiceNotice();activeStory=null;modalOpen=false;menuPaused=false;selectedOrderId=null;state=initial();weekRules?.init(state,true);
@@ -12020,6 +12355,7 @@ function weekViewAdapter() {
   state:()=>state, selected:()=>selectedOrderId, render, open:openDay,
   select:selectOrder, notice:serviceNotice, receipt:summary,
   prep:section=>{setTab('prep');window.RingExperience?.choosePrep(section)},
+  applyNextPrep,
   assign:(id,kind)=>assign('taki',id,kind),
   linkMilk:id=>{if(state.week.milkOrder!==id)return;const result=weekRules.command(state,id,'make');if(!result)return;state.week.latteLinked=true;state.week.milkOrder=null;beep(result==='make'?'brew':'click');render(true)},
   place:(slot,id)=>{const previous=state.week.placements[slot];if(!weekRules.place(state,slot,id))return false;beep('choice');if(previous!==id&&id==='windowLamp')serviceNotice('타키: 창가 조명이 제법 그럴싸해졌네. 비 오는 날 토모리가 좋아하겠어.');if(previous!==id&&id==='machine')serviceNotice('타키: 오, 추출 속도 1초 빨라졌네! 아논보다 백배 일 잘한다, 이 기계.');render(true);return true},
@@ -12033,6 +12369,30 @@ function weekViewAdapter() {
  };
 }
 
+function bindServicePlan(panel) {
+ panel.querySelectorAll('[data-plan-kind]').forEach(button=>button.onclick=()=>{
+  const {planKind,planValue}=button.dataset;
+  const value=planKind==='window'?planValue==='yes':planValue==='none'?null:planValue;
+  if(!weekRules.planChoice(state,planKind,value))return;
+  render(true);
+  panel.querySelector('[data-plan-kind="'+planKind+'"][data-plan-value="'+planValue+'"]')?.focus({preventScroll:true});
+ });
+}
+
+function applyNextPrep(choice=state.week?.nextPrep) {
+ if(!choice||choice.day!==state.day||state.phase!=='prep')return;
+ const section=choice.kind==='menu'?'menu':'stock';
+ weekViewAdapter().prep(section);
+ const target=choice.kind==='work'?$('#priority'):
+  choice.kind==='menu'?$('[data-prep-menu="'+choice.id+'"]'):$('#weekBasket [name="'+choice.id+'"]');
+ if(!target)return;
+ if(choice.kind==='work')$('#operations').open=true;
+ const highlight=choice.kind==='stock'?target.closest('label'):target;
+ highlight?.classList.add('next-prep-focus');
+ target.focus({preventScroll:true});
+ target.scrollIntoView?.({block:'nearest'});
+}
+
 function showWeekReceipt() {
  if (state.phase!=='closed') return;
  beep('result');
@@ -12043,6 +12403,16 @@ function showWeekReceipt() {
  dialog.innerHTML=window.RingWeekView.receipt(state,storyData);
  window.RingWeekView.bindArchive(dialog,weekViewAdapter());
  $('#tomorrow').onclick=nextDay;
+ const mark=$('#weekPlanTomorrow');
+ if(mark)mark.onclick=()=>{
+  if(state.phase!=='closed')return;
+  const action=weekRules.nextAction(state);
+  if(!action)return;
+  state.week.nextPrep={day:state.day+1,kind:action.kind,id:action.id};
+  save();
+  mark.textContent='내일 먼저 보기 예약됨';
+  mark.setAttribute('aria-pressed','true');
+ };
  const reorder=$('#weekReorder');if(reorder)reorder.onclick=()=>{
   const plan=weekRules.recommendation(state,state.day+1);
   dialog.innerHTML='<section class="week-receipt"><div class="eyebrow">DAY '+(state.day+1)+' · 발주 미리 보기</div><h2>내일 필요한 재료</h2><p>오늘 재고와 내일 예보를 기준으로 한 추정량입니다. 실제 발주는 내일 준비 화면에서 할 수 있어요.</p><ul>'+Object.entries(ingredients).map(([key,item])=>'<li>'+item.name+' · 보유 '+state.stock[key]+' · 예상 '+plan.low[key]+'~'+plan.high[key]+'개</li>').join('')+'</ul><button id="done" class="primary">영수증으로</button></section>';

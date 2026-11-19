@@ -1,8 +1,8 @@
 {
   "name": "project-ring",
-  "version": "0.0.53",
+  "version": "0.0.54",
   "private": true,
-  "description": "PROJECT RiNG v53 stability and performance patch",
+  "description": "PROJECT RiNG v54 gameplay expansion",
   "engines": {
     "node": ">=22"
   },

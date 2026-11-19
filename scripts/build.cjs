@@ -16,7 +16,7 @@ let html=read('index.html');const scripts=[...html.matchAll(/<script src="([^"?]
 assert(scripts.length>=30&&styles.length>=10);
 let js=scripts.map(file=>file==='image-manifest.js'?"window.RingImageManifest="+JSON.stringify(Object.fromEntries(Object.entries(images).map(([key,row])=>[key,{...row,url:versionURL(row.url),...(row.small?{small:versionURL(row.small)}:{})}]))):read(file)).join('\n;\n');
 const css=styles.map(file=>'/* '+file+' */\n'+read(file)).join('\n').replace(/url\((['"]?)(assets\/[^)'"\s]+)\1\)/g,(_all,_quote,url)=>'url("'+versionURL(url)+'")');
-const id='v53-'+hash(js+css+JSON.stringify(images)).slice(0,16);js="'use strict';\nwindow.RingBuild="+JSON.stringify({version:53,id})+';\n'+js;
+const id='v54-'+hash(js+css+JSON.stringify(images)).slice(0,16);js="'use strict';\nwindow.RingBuild="+JSON.stringify({version:54,id})+';\n'+js;
 const jsName='game.'+hash(js).slice(0,12)+'.js',cssName='styles.'+hash(css).slice(0,12)+'.css';
 fs.writeFileSync(path.join(out,jsName),js);fs.writeFileSync(path.join(out,cssName),css);
 let firstJS=true,firstCSS=true;html=html.replace(/<script src="[^"?]+\.js"><\/script>/g,()=>{if(!firstJS)return '';firstJS=false;return '<script src="'+jsName+'" defer></script>';}).replace(/<link rel="stylesheet" href="[^"?]+\.css">/g,()=>{if(!firstCSS)return '';firstCSS=false;return '<link rel="stylesheet" href="'+cssName+'">';});
@@ -26,5 +26,5 @@ fs.writeFileSync(path.join(out,'index.html'),html);fs.cpSync(path.join(app,'asse
 const first=['title-screen','cafe-v52','pico-taki-v52','pico-guests-v52','menu-atlas','furniture-v52','taki-chibi'].map(x=>'assets/'+x+'.png').concat(['taki','anon','tomori','soyo','rana'].map(x=>'assets/casual/'+x+'.png'));
 const firstPlayImageBytes=first.reduce((n,key)=>n+images[key].bytes,0);assert(firstPlayImageBytes<5e6);
 const files=[];function walk(dir=''){for(const e of fs.readdirSync(path.join(out,dir),{withFileTypes:true})){const name=(dir?dir+'/':'')+e.name;if(e.isDirectory())walk(name);else{const bytes=fs.readFileSync(path.join(out,name));files.push({path:name,bytes:bytes.length,sha256:hash(bytes)});}}}walk();
-fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:53,id,entry:jsName,styles:cssName,sourceScripts:scripts,sourceStyles:styles,firstPlayImageBytes,files},null,2)+'\n');
+fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:54,id,entry:jsName,styles:cssName,sourceScripts:scripts,sourceStyles:styles,firstPlayImageBytes,files},null,2)+'\n');
 console.log(JSON.stringify({id,jsName,cssName,firstPlayImageBytes,files:files.length},null,2));

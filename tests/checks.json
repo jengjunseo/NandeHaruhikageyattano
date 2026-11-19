@@ -58,5 +58,6 @@
   "visitor-sprites-check.cjs",
   "all-expression-check.cjs",
   "vn-background-check.cjs",
-  "taki-sprite-check.cjs"
+  "taki-sprite-check.cjs",
+  "v54-gameplay-check.cjs"
 ]

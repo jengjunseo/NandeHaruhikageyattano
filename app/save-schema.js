@@ -15,7 +15,7 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
  function read(input,{defaults,balance,weekValid}={}){
   const fail=code=>({ok:false,code,message:'저장 데이터의 '+({ACCOUNTING:'회계 기록',NUMBERS:'숫자 기록',PREFERENCES:'설정',PRICE:'가격',IDS:'주문 번호',JOBS:'작업 연결',WEEK:'영업 기록',SHAPE:'형식',VERSION:'버전'}[code]||'일부 기록')+'을 확인할 수 없습니다. 원본은 보존됩니다.'});
   if(!object(input)||!safeTree(input))return fail('SHAPE');
-  if(input.saveVersion!==undefined&&!integer(input.saveVersion,1,1))return fail('VERSION');
+  if(input.saveVersion!==undefined&&!integer(input.saveVersion,1,2))return fail('VERSION');
   if(!integer(input.day,1,1000000)||!number(input.money)||!['prep','open','closed'].includes(input.phase)||!object(input.stock)||!Array.isArray(input.customers)||!Array.isArray(input.stories)||!object(input.workers))return fail('SHAPE');
   let s;try{s=JSON.parse(JSON.stringify(input))}catch{return fail('SHAPE')}
   // Only absent legacy fields acquire defaults. Invalid present values are never
@@ -40,6 +40,10 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
   if(!integer(s.nextId,1)||!integer(s.tick)||!integer(s.arrival)||!integer(s.fatigue,0,100))return fail('NUMBERS');
   for(const k of ['served','left','revenue','expense','overhead','waste','turnedAway','priceWalkouts','varietyWalkouts','supportDebt','loanPaid','soldLiveSet','endingDays','endingServed','endingLost'])if(!integer(s[k],0,1e12))return fail('NUMBERS');
   if(!object(s.stock)||!['beans','milk','cake','matcha'].every(k=>integer(s.stock[k])))return fail('NUMBERS');
+  for(const log of [s.menuHistory?.today,s.menuHistory?.yesterday]){
+   if(log==null)continue;
+   if(!object(log)||Object.values(log).some(row=>!object(row)||row.accepted!==undefined&&!integer(row.accepted)))return fail('SHAPE');
+  }
   if(s.revision!==undefined&&!integer(s.revision))return fail('NUMBERS');
   if(!modes.includes(s.priority)||![1,2].includes(s.simSpeed)||![0,12,30].includes(s.vnSpeed)||![1000,1800,3500].includes(s.vnAutoDelay)||!['normal','large'].includes(s.vnTextSize)||typeof s.reduceMotion!=='boolean'||typeof s.sound!=='boolean'||!number(s.volume,0,1))return fail('PREFERENCES');
   for(const k of ['prices','enabled','upgrades','regulars'])if(!object(s[k]))return fail('SHAPE');
@@ -58,18 +62,21 @@ if(typeof window!=='undefined')window.RingSaveSchema=(()=>{
    if(!object(c)||!integer(c.id,1)||ids.has(c.id)||!menuIds.includes(c.menu)||!['waiting','making','ready','serving'].includes(c.status)||!integer(c.patience,0,1000000)||!integer(c.maxPatience,1,1000000)||c.patience>c.maxPatience)return fail('IDS');
    if(c.price!=null&&!integer(c.price,1,10000)||c.materialCost!=null&&!integer(c.materialCost,0,10000)||c.seat!=null&&!integer(c.seat,0,63))return fail('PRICE');
    if(c.regularId!=null&&!['haru','mei','jun'].includes(c.regularId)||c.regularName!=null&&!['하루','메이','준'].includes(c.regularName)||c.profile!=null&&!['general','window','fan'].includes(c.profile))return fail('SHAPE');
+   if(c.remembers!==undefined&&!menuIds.includes(c.remembers)||c.setReplaced!==undefined&&typeof c.setReplaced!=='boolean')return fail('SHAPE');
    ids.add(c.id);
   }
   const ledger=s.week?.shift?.ledger||[];
   if(!Array.isArray(ledger)||ledger.length>1000||ledger.some(x=>!object(x)||!integer(x.id,1)))return fail('IDS');
   if(ledger.some(x=>x.revenue!==undefined&&!integer(x.revenue,0,1e12)||x.cost!==undefined&&!integer(x.cost,0,1e12)))return fail('ACCOUNTING');
+  if(ledger.some(x=>x.at!==undefined&&!integer(x.at,0,s.tick)||x.quotedPrice!==undefined&&!integer(x.quotedPrice,1,10000)||
+    x.seat!==undefined&&!integer(x.seat,0,63)||['accepted','setReplaced'].some(k=>x[k]!==undefined&&typeof x[k]!=='boolean')))return fail('SHAPE');
   if(s.nextId<=Math.max(0,...ids,...ledger.map(x=>x.id)))return fail('IDS');
   if(Object.keys(s.workers).some(k=>k!=='taki'))return fail('JOBS');
   const jobs=Object.values(s.workers).filter(Boolean);
   for(const w of jobs)if(!object(w)||!integer(w.id,1)||!['make','serve'].includes(w.kind)||!integer(w.remaining,1,1000000)||!s.customers.some(c=>c.id===w.id&&c.status===(w.kind==='make'?'making':'serving')))return fail('JOBS');
   if(s.customers.some(c=>['making','serving'].includes(c.status)&&!jobs.some(w=>w.id===c.id&&w.kind===(c.status==='making'?'make':'serve'))))return fail('JOBS');
   if(s.week){try{if(!weekValid?.(s.week,s)||s.week.queue.length>200||new Set(s.week.queue).size!==s.week.queue.length||s.week.photos.length>1000)return fail('WEEK');}catch{return fail('WEEK');}}
-  s.saveVersion=1;return {ok:true,value:s,code:null,message:''};
+  s.saveVersion=2;return {ok:true,value:s,code:null,message:''};
  }
  return {read};
 })();
